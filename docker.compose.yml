@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: mockly-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: mockly_admin
+      POSTGRES_PASSWORD: mockly_secure_password_2026
+      POSTGRES_DB: mockly_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

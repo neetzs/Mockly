@@ -1,0 +1,25 @@
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+appsettings.Development.json
+appsettings.Local.json
+
+# Node / Vite
+node_modules/
+frontend/dist/
+frontend/.cache/
+*.tsbuildinfo
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db

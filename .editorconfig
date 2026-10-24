@@ -1,0 +1,30 @@
+# Mockly - Reglas de formato y consistencia de código
+root = true
+
+# Configuración global para todos los archivos
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Frontend: TypeScript, JavaScript, JSON y CSS (convención estándar de 2 espacios)
+[*.{js,jsx,ts,tsx,json,css,scss,html,yaml,yml}]
+indent_size = 2
+
+# Backend C#: Estándares modernos de .NET 10 / C# 14
+[*.cs]
+indent_size = 4
+csharp_new_line_before_open_brace = all
+csharp_space_after_cast = false
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+
+# Usar file-scoped namespaces (C# 10+) para evitar indentaciones innecesarias
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Usar pattern matching y expresiones switch modernas
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion

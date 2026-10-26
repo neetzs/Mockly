@@ -16,6 +16,9 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Vite client types */
+    "types": ["vite/client"],
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
@@ -23,7 +26,6 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Path Aliases */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

@@ -2,11 +2,12 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Mockly.Domain.Entities;
+using Mockly.Application.Common.Interfaces;
 
 namespace Mockly.Infrastructure.Persistence;
 
 /// Punto de entrada principal de Entity Framework Core 10 para la persistencia en PostgreSQL.
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 

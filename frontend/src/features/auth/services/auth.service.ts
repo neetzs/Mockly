@@ -1,11 +1,11 @@
 import type { LoginPayload, RegisterPayload, UserSession } from '../types/auth.types';
 
-// Ajusta el puerto si tu Kestrel corre en 5067 o 5000
-const API_BASE_URL = 'http://localhost:5000/api/v1/auth';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5067/api/v1';
+const AUTH_URL = `${BASE_URL}/auth`;
 
     export const authService = {
     async register(payload: RegisterPayload): Promise<UserSession> {
-        const res = await fetch(`${API_BASE_URL}/register`, {
+        const res = await fetch(`${AUTH_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -20,7 +20,7 @@ const API_BASE_URL = 'http://localhost:5000/api/v1/auth';
     },
 
     async login(payload: LoginPayload): Promise<UserSession> {
-        const res = await fetch(`${API_BASE_URL}/login`, {
+        const res = await fetch(`${AUTH_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -35,12 +35,12 @@ const API_BASE_URL = 'http://localhost:5000/api/v1/auth';
     },
 
     async getCurrentUser(token: string): Promise<UserSession> {
-        const res = await fetch(`${API_BASE_URL}/me`, {
+        const res = await fetch(`${AUTH_URL}/me`, {
         headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!res.ok) {
-        throw new Error('Token expirado o no autorizado.');
+        throw new Error('Token inválido o expirado.');
         }
 
         return res.json();

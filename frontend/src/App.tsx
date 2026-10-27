@@ -48,10 +48,6 @@ const MainLayout: React.FC = () => {
 
       {/* Main Container / Dashboard temporal */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 flex flex-col items-center justify-center text-center space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-indigo-950/60 border border-indigo-800/60 text-indigo-300">
-          <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-          <span>Fase 2: Sala de Entrevista con IA en Preparación</span>
-        </div>
 
         <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white max-w-2xl">
           Bienvenido al centro de evaluación técnica,{" "}

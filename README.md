@@ -24,9 +24,9 @@ Mockly es una plataforma SaaS integral diseñada para optimizar, estandarizar y 
 - **Motor de IA:** `Microsoft.Extensions.AI` (`IChatClient` con JSON estricto)
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui
 - **Herramientas de Cliente:** Monaco Editor (`@monaco-editor/react`), Recharts, `@microsoft/signalr`
-- **Infraestructura:** Docker Compose, PostgreSQL 17
-
----
+- **Infraestructura:** Docker Compose, PostgreSQL 17 Alpine
+- **Seguridad & Validación:** JWT Bearer, BCrypt.Net, FluentValidation
+- **Motor de IA (En desarrollo):** `Microsoft.Extensions.AI` (`IChatClient` con JSON estructurado)
 
 ## Estructura del Monorepo
 
@@ -34,12 +34,15 @@ Mockly es una plataforma SaaS integral diseñada para optimizar, estandarizar y 
 Mockly/
 ├── backend/
 │   ├── src/
-│   │   ├── Domain/          # Entidades puras, enums y contratos
-│   │   ├── Application/     # Casos de uso, DTOs y FluentValidation
-│   │   ├── Infrastructure/  # EF Core, PostgreSQL, IA, PDF y JWT
-│   │   └── WebApi/          # Minimal APIs, SignalR Hubs y Middleware
-│   └── Mockly.sln
-├── frontend/                # React 19 SPA con Vite y shadcn/ui
+│   │   ├── Domain/          # Entidades puras, enums y contratos (sin dependencias externas)
+│   │   ├── Application/     # Casos de uso, DTOs, validaciones FluentValidation y servicios
+│   │   ├── Infrastructure/  # EF Core, PostgreSQL, persistencia, seguridad (JWT/BCrypt)
+│   │   └── WebApi/          # Minimal APIs, middlewares, CORS y endpoints
+│   ├── Dockerfile
+│   └── Mockly.slnx
+├── frontend/                # React 19 SPA con Vite, Tailwind CSS y componentes shadcn/ui
 ├── docker-compose.yml       # Base de datos PostgreSQL local
+├── .editorconfig
+├── .env.example
 ├── .gitignore
 └── README.md

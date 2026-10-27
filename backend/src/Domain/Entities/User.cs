@@ -7,6 +7,7 @@ namespace Mockly.Domain.Entities;
 /// Representa a cualquier usuario registrado en Mockly (Candidato o Reclutador).
 public class User : BaseEntity
 {
+    
     public string Email { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
     public string FullName { get; private set; } = string.Empty;

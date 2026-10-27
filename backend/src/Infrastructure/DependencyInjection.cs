@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Mockly.Infrastructure.Persistence;
-
+using Mockly.Application.Common.Interfaces;
+using Mockly.Infrastructure.Security;
 namespace Mockly.Infrastructure;
 
 public static class DependencyInjection
@@ -23,6 +24,15 @@ public static class DependencyInjection
                 // Tolera cortes momentáneos de red reintentando hasta 3 veces
                 npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
             }));
+
+
+        // Exponer IApplicationDbContext a Application
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
+        // Componentes de Seguridad y Tokens
+        services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
 
         return services;
     }

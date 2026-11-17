@@ -1,7 +1,7 @@
 import React from "react";
 import { AuthProvider, useAuth } from "./features/auth/context";
 import { AuthPage } from "./features/auth/AuthPage";
-import { LogOut, Code2, Sparkles, User } from "lucide-react";
+import { LogOut, Code2, User } from "lucide-react";
 
 const MainLayout: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();

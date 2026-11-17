@@ -19,4 +19,12 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Los componentes de shadcn/ui exportan helpers (p. ej. badgeStyles)
+    // junto a los componentes, lo que rompe react-refresh/only-export-components.
+    files: ['src/components/ui/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

@@ -1,4 +1,5 @@
 // backend/src/WebApi/Program.cs
+using Mockly.WebApi.ExceptionHandlers;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -50,6 +51,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
 // 4. OpenAPI Nativo de .NET 10
 builder.Services.AddOpenApi();

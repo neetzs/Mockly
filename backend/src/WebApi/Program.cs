@@ -79,4 +79,7 @@ app.UseAuthorization();
 // 6. Mapear endpoints mínimos de Auth
 app.MapAuthEndpoints();
 
+// 7. Mapear endpoints de la sala de entrevista (Bloque 2)
+app.MapInterviewEndpoints();
+
 app.Run();

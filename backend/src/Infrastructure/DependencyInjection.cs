@@ -1,4 +1,6 @@
 // backend/src/Infrastructure/DependencyInjection.cs
+using Mockly.Domain.Interfaces;
+using Mockly.Infrastructure.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +34,9 @@ public static class DependencyInjection
         // Componentes de Seguridad y Tokens
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+        // Motor de evaluación por IA (mock mientras no hay API key)
+        services.AddScoped<IInterviewEvaluationService, FakeInterviewEvaluationService>();
 
 
         return services;

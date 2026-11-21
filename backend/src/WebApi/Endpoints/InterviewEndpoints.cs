@@ -21,6 +21,16 @@ public static class InterviewEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        // GET /api/v1/interviews/me → entrevistas asignadas al candidato logueado
+        // (se declara antes que /{id:guid}; igual no chocan porque "me" no es un Guid)
+        group.MapGet("/me", async (ClaimsPrincipal user, IInterviewService interviewService, CancellationToken ct) =>
+        {
+            var response = await interviewService.GetMyInterviewsAsync(user.GetUserId(), ct);
+            return Results.Ok(response);
+        })
+        .WithName("GetMyInterviews")
+        .Produces<IReadOnlyList<InterviewSummaryResponse>>(StatusCodes.Status200OK);
+
         // GET /api/v1/interviews/{id} → carga el reto para el Monaco Editor (no cambia el estado)
         group.MapGet("/{id:guid}", async (Guid id, ClaimsPrincipal user, IInterviewService interviewService, CancellationToken ct) =>
         {

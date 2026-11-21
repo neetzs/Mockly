@@ -8,7 +8,19 @@ public sealed record InterviewDetailResponse(
     string ChallengeTitle,
     string ChallengeDescription,
     string InitialCodeTemplate,
-    string Difficulty
+    string Difficulty,
+    string? SubmittedCode,
+    EvaluationResponse? Evaluation // solo viene cuando la entrevista está Completed
+);
+
+/// Fila del listado "Mis entrevistas" del candidato
+public sealed record InterviewSummaryResponse(
+    Guid Id,
+    string Status,
+    string ChallengeTitle,
+    string Difficulty,
+    int? OverallScore,
+    DateTime? CompletedAtUtc
 );
 
 /// Código enviado por el candidato para ser evaluado

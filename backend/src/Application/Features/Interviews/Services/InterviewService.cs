@@ -27,6 +27,24 @@ public sealed class InterviewService : IInterviewService
         _evaluationService = evaluationService;
     }
 
+    public async Task<IReadOnlyList<InterviewSummaryResponse>> GetMyInterviewsAsync(Guid candidateId, CancellationToken cancellationToken = default)
+    {
+        // Proyección con Select: EF arma un SELECT solo con las columnas necesarias
+        // (no trae las entidades completas ni el código enviado).
+        return await _context.InterviewSessions
+            .AsNoTracking()
+            .Where(s => s.CandidateId == candidateId)
+            .OrderBy(s => s.TechnicalChallenge.Difficulty)
+            .Select(s => new InterviewSummaryResponse(
+                s.Id,
+                s.Status.ToString(),
+                s.TechnicalChallenge.Title,
+                s.TechnicalChallenge.Difficulty.ToString(),
+                s.OverallScore,
+                s.CompletedAtUtc))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<InterviewDetailResponse> GetInterviewAsync(Guid interviewId, Guid candidateId, CancellationToken cancellationToken = default)
     {
         // Solo lectura: AsNoTracking evita que EF siga los cambios de la entidad (más liviano).
@@ -75,14 +93,7 @@ public sealed class InterviewService : IInterviewService
         await _context.SaveChangesAsync(cancellationToken);
 
         // Paso 6 — Devolver el DTO a la API.
-        return new EvaluationResponse(
-            result.OverallScore,
-            result.CodeQualityScore,
-            result.ProblemSolvingScore,
-            result.ArchitectureScore,
-            result.Summary,
-            result.Strengths,
-            result.Improvements);
+        return ToEvaluationResponse(result);
     }
 
     /// Busca la sesión con su reto y verifica la pertenencia.
@@ -104,12 +115,32 @@ public sealed class InterviewService : IInterviewService
         return session;
     }
 
-    private static InterviewDetailResponse ToDetailResponse(InterviewSession session) =>
-        new(
+    private static InterviewDetailResponse ToDetailResponse(InterviewSession session)
+    {
+        // Si ya fue evaluada, reconstruimos el resultado desde el JSON guardado,
+        // así el frontend puede mostrarlo al recargar la sala.
+        var evaluation = session.AiFeedbackJson is { } json
+            ? JsonSerializer.Deserialize<TechnicalScoreResult>(json) is { } stored ? ToEvaluationResponse(stored) : null
+            : null;
+
+        return new(
             session.Id,
             session.Status.ToString(),
             session.TechnicalChallenge.Title,
             session.TechnicalChallenge.Description,
             session.TechnicalChallenge.InitialCodeTemplate,
-            session.TechnicalChallenge.Difficulty.ToString());
+            session.TechnicalChallenge.Difficulty.ToString(),
+            string.IsNullOrEmpty(session.SubmittedCode) ? null : session.SubmittedCode,
+            evaluation);
+    }
+
+    private static EvaluationResponse ToEvaluationResponse(TechnicalScoreResult result) =>
+        new(
+            result.OverallScore,
+            result.CodeQualityScore,
+            result.ProblemSolvingScore,
+            result.ArchitectureScore,
+            result.Summary,
+            result.Strengths,
+            result.Improvements);
 }

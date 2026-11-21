@@ -7,6 +7,8 @@ namespace Mockly.Application.Features.Interviews.Services;
 /// para verificar que la entrevista le pertenece.
 public interface IInterviewService
 {
+    Task<IReadOnlyList<InterviewSummaryResponse>> GetMyInterviewsAsync(Guid candidateId, CancellationToken cancellationToken = default);
+
     Task<InterviewDetailResponse> GetInterviewAsync(Guid interviewId, Guid candidateId, CancellationToken cancellationToken = default);
 
     Task<InterviewDetailResponse> StartInterviewAsync(Guid interviewId, Guid candidateId, CancellationToken cancellationToken = default);

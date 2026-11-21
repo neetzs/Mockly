@@ -50,6 +50,19 @@ public static class InterviewEndpoints
         .Produces<InterviewDetailResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status409Conflict);
 
+        // GET /api/v1/interviews/{id}/certificate → PDF del certificado (solo entrevistas completadas)
+        group.MapGet("/{id:guid}/certificate", async (Guid id, ClaimsPrincipal user, IInterviewService interviewService, CancellationToken ct) =>
+        {
+            var certificate = await interviewService.GetCertificateAsync(id, user.GetUserId(), ct);
+
+            // Results.File arma la respuesta binaria con Content-Type application/pdf
+            // y Content-Disposition: attachment (el navegador lo trata como descarga).
+            return Results.File(certificate.Content, "application/pdf", certificate.FileName);
+        })
+        .WithName("GetCertificate")
+        .Produces(StatusCodes.Status200OK, contentType: "application/pdf")
+        .ProducesProblem(StatusCodes.Status409Conflict);
+
         // POST /api/v1/interviews/{id}/submit → envía el código y devuelve la evaluación
         group.MapPost("/{id:guid}/submit", async (Guid id, SubmitCodeRequest request, ClaimsPrincipal user, IInterviewService interviewService, CancellationToken ct) =>
         {

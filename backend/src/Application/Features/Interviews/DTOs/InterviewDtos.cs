@@ -38,3 +38,9 @@ public sealed record EvaluationResponse(
     IReadOnlyList<string> Strengths,
     IReadOnlyList<string> Improvements
 );
+
+/// Archivo PDF del certificado listo para devolver como descarga
+public sealed record CertificateFileResponse(
+    byte[] Content,
+    string FileName
+);

@@ -5,6 +5,8 @@ using Mockly.Application.Common.Exceptions;
 using Mockly.Application.Common.Interfaces;
 using Mockly.Application.Features.Interviews.DTOs;
 using Mockly.Domain.Entities;
+using Mockly.Domain.Enums;
+using Mockly.Domain.Exceptions;
 using Mockly.Domain.Interfaces;
 using System.Text.Json;
 
@@ -16,15 +18,18 @@ public sealed class InterviewService : IInterviewService
     private readonly IApplicationDbContext _context;
     private readonly IValidator<SubmitCodeRequest> _submitValidator;
     private readonly IInterviewEvaluationService _evaluationService;
+    private readonly ICertificateGenerator _certificateGenerator;
 
     public InterviewService(
         IApplicationDbContext context,
         IValidator<SubmitCodeRequest> submitValidator,
-        IInterviewEvaluationService evaluationService)
+        IInterviewEvaluationService evaluationService,
+        ICertificateGenerator certificateGenerator)
     {
         _context = context;
         _submitValidator = submitValidator;
         _evaluationService = evaluationService;
+        _certificateGenerator = certificateGenerator;
     }
 
     public async Task<IReadOnlyList<InterviewSummaryResponse>> GetMyInterviewsAsync(Guid candidateId, CancellationToken cancellationToken = default)
@@ -61,6 +66,32 @@ public sealed class InterviewService : IInterviewService
         await _context.SaveChangesAsync(cancellationToken);
 
         return ToDetailResponse(session);
+    }
+
+    public async Task<CertificateFileResponse> GetCertificateAsync(Guid interviewId, Guid candidateId, CancellationToken cancellationToken = default)
+    {
+        // Paso 1 — La entrevista tiene que ser del candidato (404 / 403)...
+        var session = await FindOwnedSessionAsync(interviewId, candidateId, tracking: false, cancellationToken);
+
+        // Paso 2 — ...y tiene que estar evaluada: sin nota no hay certificado (409).
+        if (session.Status != InterviewStatus.Completed
+            || session.AiFeedbackJson is null
+            || JsonSerializer.Deserialize<TechnicalScoreResult>(session.AiFeedbackJson) is not { } evaluation)
+        {
+            throw new DomainException("El certificado está disponible solo para entrevistas completadas.");
+        }
+
+        // Paso 3 — Armar los datos y delegar el dibujo del PDF a Infrastructure (QuestPDF).
+        var pdf = _certificateGenerator.GeneratePdfCertificate(new CertificateData(
+            session.Id,
+            session.Candidate.FullName,
+            session.JobOpening.Title,
+            session.TechnicalChallenge.Title,
+            session.TechnicalChallenge.Difficulty.ToString(),
+            session.CompletedAtUtc ?? session.UpdatedAtUtc ?? session.CreatedAtUtc,
+            evaluation));
+
+        return new CertificateFileResponse(pdf, $"certificado-mockly-{session.Id.ToString()[..8]}.pdf");
     }
 
     public async Task<EvaluationResponse> SubmitCodeAsync(Guid interviewId, Guid candidateId, SubmitCodeRequest request, CancellationToken cancellationToken = default)
@@ -101,7 +132,11 @@ public sealed class InterviewService : IInterviewService
     /// - Es de otro usuario → 403 (ForbiddenAccessException)
     private async Task<InterviewSession> FindOwnedSessionAsync(Guid interviewId, Guid candidateId, bool tracking, CancellationToken cancellationToken)
     {
-        var query = _context.InterviewSessions.Include(s => s.TechnicalChallenge);
+        // Candidate y JobOpening se usan para el certificado (nombre y búsqueda).
+        IQueryable<InterviewSession> query = _context.InterviewSessions
+            .Include(s => s.TechnicalChallenge)
+            .Include(s => s.Candidate)
+            .Include(s => s.JobOpening);
 
         var session = await (tracking ? query : query.AsNoTracking())
             .SingleOrDefaultAsync(s => s.Id == interviewId, cancellationToken)

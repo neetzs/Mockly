@@ -1,6 +1,7 @@
 // backend/src/Infrastructure/DependencyInjection.cs
 using Mockly.Domain.Interfaces;
 using Mockly.Infrastructure.AI;
+using Mockly.Infrastructure.Reporting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using OpenAI;
@@ -56,6 +57,11 @@ public static class DependencyInjection
         {
             services.AddScoped<IInterviewEvaluationService, FakeInterviewEvaluationService>();
         }
+
+        // Certificados PDF. QuestPDF exige declarar la licencia: Community es gratuita
+        // para proyectos open source y empresas con ingresos < USD 1M (nuestro caso).
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+        services.AddSingleton<ICertificateGenerator, QuestPdfCertificateGenerator>();
 
         // Seeder de datos demo (se invoca solo en Development desde Program.cs)
         services.AddScoped<DbSeeder>();

@@ -6,13 +6,15 @@ using Mockly.Domain.Exceptions;
 namespace Mockly.Domain.Entities;
 
 /// Instancia concreta donde un candidato resuelve un reto técnico y recibe evaluación por IA.
+/// Puede ser parte de una búsqueda laboral (la ve el reclutador) o una práctica libre (JobOpeningId = null).
 public class InterviewSession : BaseEntity
 {
     public Guid CandidateId { get; private set; }
     public User Candidate { get; private set; } = null!;
 
-    public Guid JobOpeningId { get; private set; }
-    public JobOpening JobOpening { get; private set; } = null!;
+    /// Null = sesión de práctica: no aparece en rankings ni notifica a ningún reclutador.
+    public Guid? JobOpeningId { get; private set; }
+    public JobOpening? JobOpening { get; private set; }
 
     public Guid TechnicalChallengeId { get; private set; }
     public TechnicalChallenge TechnicalChallenge { get; private set; } = null!;
@@ -30,6 +32,8 @@ public class InterviewSession : BaseEntity
 
     public DateTime? CompletedAtUtc { get; private set; }
 
+    public bool IsPractice => JobOpeningId is null;
+
     private InterviewSession() { }
 
     public InterviewSession(Guid candidateId, Guid jobOpeningId, Guid technicalChallengeId)
@@ -37,6 +41,24 @@ public class InterviewSession : BaseEntity
         CandidateId = candidateId;
         JobOpeningId = jobOpeningId;
         TechnicalChallengeId = technicalChallengeId;
+    }
+
+    /// Crea un intento de práctica ya iniciado. Factory method: un nombre explícito deja clara la intención
+    /// y concentra la regla de que solo los retos de la biblioteca se pueden practicar.
+    public static InterviewSession StartPractice(Guid candidateId, TechnicalChallenge challenge)
+    {
+        if (!challenge.IsPractice)
+        {
+            throw new DomainException("Este reto pertenece a una búsqueda y no está disponible para práctica.");
+        }
+
+        var session = new InterviewSession
+        {
+            CandidateId = candidateId,
+            TechnicalChallengeId = challenge.Id,
+        };
+        session.Start();
+        return session;
     }
 
     /// Pasa la sesión a InProgress. Si ya estaba en curso no hace nada (idempotente),

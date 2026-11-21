@@ -5,6 +5,8 @@ namespace Mockly.Application.Features.Interviews.DTOs;
 public sealed record InterviewDetailResponse(
     Guid Id,
     string Status,
+    Guid ChallengeId,
+    string? JobOpeningTitle, // null = intento de práctica
     string ChallengeTitle,
     string ChallengeDescription,
     string InitialCodeTemplate,
@@ -18,6 +20,8 @@ public sealed record InterviewDetailResponse(
 public sealed record InterviewSummaryResponse(
     Guid Id,
     string Status,
+    Guid ChallengeId,
+    string? JobOpeningTitle, // null = intento de práctica
     string ChallengeTitle,
     string Difficulty,
     string Language,

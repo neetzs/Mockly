@@ -17,5 +17,10 @@ const LANGUAGES: Record<ProgrammingLanguage, { label: string; monaco: string }> 
 export const languageLabel = (language: string): string =>
   LANGUAGES[language as ProgrammingLanguage]?.label ?? language;
 
+// Niveles del enum ChallengeDifficulty del backend, con el nombre que se usa en el mercado local.
+const DIFFICULTIES: Record<string, string> = { Junior: 'Junior', MidLevel: 'Semi Senior', Senior: 'Senior' };
+
+export const difficultyLabel = (difficulty: string): string => DIFFICULTIES[difficulty] ?? difficulty;
+
 export const monacoLanguageId = (language: string): string =>
   LANGUAGES[language as ProgrammingLanguage]?.monaco ?? 'plaintext';

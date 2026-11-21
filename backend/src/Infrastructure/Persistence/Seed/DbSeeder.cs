@@ -54,6 +54,9 @@ public sealed class DbSeeder
         // Va después del ranking para poder sumarle entrevistas evaluadas a esos mismos candidatos.
         await SeedMultiLanguageDataAsync(cancellationToken);
 
+        // Paso 9 — Biblioteca de práctica: retos sin búsqueda, disponibles para cualquier candidato registrado.
+        await SeedPracticeLibraryAsync(cancellationToken);
+
         await LogDemoSessionsAsync(cancellationToken);
     }
 
@@ -179,6 +182,21 @@ public sealed class DbSeeder
     }
 
     /// Entrevista ya evaluada para el ranking, respetando las reglas del dominio (Start → Complete).
+    private async Task SeedPracticeLibraryAsync(CancellationToken cancellationToken)
+    {
+        // Idempotencia: si ya hay algún reto sin búsqueda, la biblioteca ya fue cargada.
+        if (await _context.TechnicalChallenges.AnyAsync(c => c.JobOpeningId == null, cancellationToken))
+        {
+            return;
+        }
+
+        var library = CreatePracticeLibrary();
+        _context.TechnicalChallenges.AddRange(library);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Biblioteca de práctica sembrada: {Count} retos.", library.Count);
+    }
+
     private static InterviewSession CreateCompletedSession(Guid candidateId, Guid jobOpeningId, Guid challengeId, int quality, int solving, int architecture)
     {
         var session = new InterviewSession(candidateId, jobOpeningId, challengeId);
@@ -274,7 +292,6 @@ public sealed class DbSeeder
             ProgrammingLanguage.CSharp,
             jobOpeningId),
     ];
-
     private static List<TechnicalChallenge> CreateMultiLanguageChallenges(Guid jobOpeningId) =>
     [
         new TechnicalChallenge(
@@ -346,9 +363,144 @@ public sealed class DbSeeder
             ProgrammingLanguage.Sql,
             jobOpeningId),
     ];
+    // Un reto por lenguaje y nivel variado: alcanza para que un candidato nuevo tenga algo para practicar
+    // en cualquier stack apenas se registra. JobOpeningId = null → biblioteca de práctica.
+    private static List<TechnicalChallenge> CreatePracticeLibrary() =>
+    [
+        new TechnicalChallenge(
+            "Palíndromo",
+            """
+            Implementá IsPalindrome(text) que devuelva true si el texto se lee igual al derecho y al revés,
+            ignorando mayúsculas, espacios y signos de puntuación.
+            Ejemplo: "Anita lava la tina" → true.
+            """,
+            """
+            public static class Solution
+            {
+                public static bool IsPalindrome(string text)
+                {
+                    // Tu código acá
+                    throw new NotImplementedException();
+                }
+            }
+            """,
+            ChallengeDifficulty.Junior,
+            ProgrammingLanguage.CSharp,
+            null),
+
+        new TechnicalChallenge(
+            "Caché LRU",
+            """
+            Implementá una clase LruCache<TKey, TValue> con capacidad fija, Get(key) y Put(key, value),
+            ambas en O(1). Cuando se llena, descarta el elemento usado hace más tiempo.
+            TryGet devuelve false si la clave no existe.
+            """,
+            """
+            public sealed class LruCache<TKey, TValue> where TKey : notnull
+            {
+                public LruCache(int capacity)
+                {
+                    // Tu código acá
+                }
+
+                public bool TryGet(TKey key, out TValue? value) => throw new NotImplementedException();
+
+                public void Put(TKey key, TValue value) => throw new NotImplementedException();
+            }
+            """,
+            ChallengeDifficulty.MidLevel,
+            ProgrammingLanguage.CSharp,
+            null),
+
+        new TechnicalChallenge(
+            "Segundo mayor",
+            """
+            Implementá second_largest(numbers) que devuelva el segundo valor distinto más grande de la lista,
+            o None si no existe. Recorré la lista una sola vez.
+            Ejemplo: [4, 1, 4, 3] → 3.
+            """,
+            """
+            def second_largest(numbers: list[int]) -> int | None:
+                # Tu código acá
+                raise NotImplementedError
+            """,
+            ChallengeDifficulty.Junior,
+            ProgrammingLanguage.Python,
+            null),
+
+        new TechnicalChallenge(
+            "Debounce",
+            """
+            Implementá debounce(fn, ms) que devuelva una función que solo ejecute fn cuando pasaron ms
+            milisegundos desde la última llamada. Los argumentos de la última llamada son los que se usan.
+            """,
+            """
+            function debounce(fn, ms) {
+              // Tu código acá
+            }
+
+            module.exports = { debounce };
+            """,
+            ChallengeDifficulty.Junior,
+            ProgrammingLanguage.JavaScript,
+            null),
+
+        new TechnicalChallenge(
+            "Reintentos con backoff",
+            """
+            Implementá retry(task, attempts, baseDelayMs) que ejecute una función async y, si falla,
+            la reintente hasta attempts veces esperando baseDelayMs * 2^intento entre cada reintento.
+            Si se agotan los intentos, relanzá el último error.
+            """,
+            """
+            export async function retry<T>(
+              task: () => Promise<T>,
+              attempts: number,
+              baseDelayMs: number,
+            ): Promise<T> {
+              // Tu código acá
+              throw new Error("No implementado");
+            }
+            """,
+            ChallengeDifficulty.MidLevel,
+            ProgrammingLanguage.TypeScript,
+            null),
+
+        new TechnicalChallenge(
+            "Validar email",
+            """
+            Implementá isValidEmail(email) sin usar expresiones regulares: una sola "@", parte local
+            y dominio no vacíos, y el dominio con al menos un punto que no esté al principio ni al final.
+            """,
+            """
+            public class Solution {
+                public static boolean isValidEmail(String email) {
+                    // Tu código acá
+                    return false;
+                }
+            }
+            """,
+            ChallengeDifficulty.Junior,
+            ProgrammingLanguage.Java,
+            null),
+
+        new TechnicalChallenge(
+            "Clientes sin pedidos",
+            """
+            Con las tablas customers(id, name) y orders(id, customer_id, total, created_at),
+            escribí una consulta que liste los clientes que no hicieron ningún pedido en los últimos 30 días,
+            ordenados por nombre.
+            """,
+            """
+            -- Tu consulta acá
+            SELECT
+            """,
+            ChallengeDifficulty.Junior,
+            ProgrammingLanguage.Sql,
+            null),
+    ];
 }
 
-/// Extensión para preparar la base al arrancar, desde Program.cs, sin exponer detalles de EF.
 public static class DbSeederExtensions
 {
     /// Aplica las migraciones pendientes y/o carga los datos demo.

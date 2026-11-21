@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Mockly.Application.Common.Interfaces;
 using Mockly.Domain.Entities;
 using Mockly.Domain.Enums;
+using Mockly.Domain.Interfaces;
+using System.Text.Json;
 
 namespace Mockly.Infrastructure.Persistence.Seed;
 
@@ -34,11 +36,20 @@ public sealed class DbSeeder
         // Paso 1 — Idempotencia: si el candidato demo ya existe, la base ya fue sembrada.
         // Chequeamos por email (y no "¿hay algún usuario?") porque alguien pudo haberse
         // registrado a mano antes y igual queremos tener los datos demo.
-        if (await _context.Users.AnyAsync(u => u.Email == CandidateEmail, cancellationToken))
+        if (!await _context.Users.AnyAsync(u => u.Email == CandidateEmail, cancellationToken))
         {
-            await LogDemoSessionsAsync(cancellationToken);
-            return;
+            await SeedBaseDataAsync(cancellationToken);
         }
+
+        // Paso 7 — Candidatos con entrevistas ya evaluadas para que el ranking del dashboard no arranque vacío.
+        // Tiene su propio chequeo de idempotencia, así también se agrega en bases sembradas antes.
+        await SeedRankingDataAsync(cancellationToken);
+
+        await LogDemoSessionsAsync(cancellationToken);
+    }
+
+    private async Task SeedBaseDataAsync(CancellationToken cancellationToken)
+    {
 
         // Paso 2 — Usuarios. La contraseña se hashea con el mismo BCrypt que usa el registro;
         // si guardáramos texto plano, el login fallaría al verificar el hash.
@@ -73,8 +84,54 @@ public sealed class DbSeeder
         _logger.LogInformation(
             "Seed completado: usuarios {Recruiter} y {Candidate} (password: {Password}).",
             RecruiterEmail, CandidateEmail, DemoPassword);
+    }
 
-        await LogDemoSessionsAsync(cancellationToken);
+    private async Task SeedRankingDataAsync(CancellationToken cancellationToken)
+    {
+        if (await _context.Users.AnyAsync(u => u.Email.EndsWith("@ranking.mockly.dev"), cancellationToken))
+        {
+            return;
+        }
+
+        // Reutilizamos la búsqueda y los retos del reclutador demo.
+        var jobOpening = await _context.JobOpenings
+            .Include(j => j.Challenges)
+            .FirstAsync(j => j.Recruiter.Email == RecruiterEmail, cancellationToken);
+        var challenges = jobOpening.Challenges.OrderBy(c => c.Difficulty).ToList();
+
+        var passwordHash = _passwordHasher.HashPassword(DemoPassword);
+
+        // (nombre, email, índice del reto, calidad, resolución, arquitectura)
+        var samples = new (string Name, string Email, int Challenge, int Quality, int Solving, int Architecture)[]
+        {
+            ("Ana Torres", "ana@ranking.mockly.dev", 2, 92, 88, 85),
+            ("Bruno Díaz", "bruno@ranking.mockly.dev", 1, 70, 64, 58),
+            ("Lucía Fernández", "lucia@ranking.mockly.dev", 0, 81, 95, 72),
+        };
+
+        foreach (var sample in samples)
+        {
+            var candidate = new User(sample.Email, passwordHash, sample.Name, UserRole.Candidate);
+            var session = new InterviewSession(candidate.Id, jobOpening.Id, challenges[sample.Challenge].Id);
+
+            // Mismo ponderado que le pedimos a la IA: 50% resolución, 30% calidad, 20% arquitectura.
+            var overall = (int)Math.Round(sample.Solving * 0.5 + sample.Quality * 0.3 + sample.Architecture * 0.2);
+            var result = new TechnicalScoreResult(
+                overall, sample.Quality, sample.Solving, sample.Architecture,
+                "Evaluación de ejemplo generada por el seeder.",
+                ["Solución correcta para los casos principales."],
+                ["Agregar tests unitarios."]);
+
+            // Respetamos las reglas del dominio: primero Start(), después Complete().
+            session.Start();
+            session.Complete("// código de ejemplo del seeder", overall, JsonSerializer.Serialize(result));
+
+            _context.Users.Add(candidate);
+            _context.InterviewSessions.Add(session);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Seed de ranking completado: {Count} entrevistas evaluadas de ejemplo.", samples.Length);
     }
 
     /// Imprime en consola los ids de las entrevistas demo, para copiarlos en Scalar / WebApi.http.

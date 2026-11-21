@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Mockly.Application.Common.Exceptions;
 using Mockly.Application.Common.Interfaces;
 using Mockly.Application.Features.Interviews.DTOs;
+using Mockly.Application.Features.Recruiter.DTOs;
 using Mockly.Domain.Entities;
 using Mockly.Domain.Enums;
 using Mockly.Domain.Exceptions;
@@ -18,17 +19,20 @@ public sealed class InterviewService : IInterviewService
     private readonly IApplicationDbContext _context;
     private readonly IValidator<SubmitCodeRequest> _submitValidator;
     private readonly IInterviewEvaluationService _evaluationService;
+    private readonly IInterviewNotifier _notifier;
     private readonly ICertificateGenerator _certificateGenerator;
 
     public InterviewService(
         IApplicationDbContext context,
         IValidator<SubmitCodeRequest> submitValidator,
         IInterviewEvaluationService evaluationService,
+        IInterviewNotifier notifier,
         ICertificateGenerator certificateGenerator)
     {
         _context = context;
         _submitValidator = submitValidator;
         _evaluationService = evaluationService;
+        _notifier = notifier;
         _certificateGenerator = certificateGenerator;
     }
 
@@ -123,7 +127,16 @@ public sealed class InterviewService : IInterviewService
         session.Complete(request.Code, result.OverallScore, feedbackJson);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Paso 6 — Devolver el DTO a la API.
+        // Paso 6 — Avisar en tiempo real al reclutador dueño de la búsqueda.
+        // Va DESPUÉS de guardar: nunca anunciamos algo que no quedó persistido.
+        // Usamos CancellationToken.None: si el candidato cerró la pestaña justo ahora,
+        // el resultado ya se guardó y el reclutador igual tiene que enterarse.
+        await _notifier.NotifyInterviewCompletedAsync(
+            session.JobOpening.RecruiterId,
+            new InterviewCompletedEvent(session.JobOpeningId, CandidateRankingResponse.FromSession(session)),
+            CancellationToken.None);
+
+        // Paso 7 — Devolver el DTO a la API.
         return ToEvaluationResponse(result);
     }
 
@@ -132,7 +145,7 @@ public sealed class InterviewService : IInterviewService
     /// - Es de otro usuario → 403 (ForbiddenAccessException)
     private async Task<InterviewSession> FindOwnedSessionAsync(Guid interviewId, Guid candidateId, bool tracking, CancellationToken cancellationToken)
     {
-        // Candidate y JobOpening se usan para el certificado (nombre y búsqueda).
+        // Candidate y JobOpening se usan para la notificación al reclutador y para el certificado.
         IQueryable<InterviewSession> query = _context.InterviewSessions
             .Include(s => s.TechnicalChallenge)
             .Include(s => s.Candidate)

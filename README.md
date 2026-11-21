@@ -66,11 +66,13 @@ Al arrancar, la API aplica las migraciones y carga datos de demostración autom�
 - `candidate@mockly.dev` — candidato con 3 retos en C# para resolver
 - `recruiter@mockly.dev` — reclutador con dashboard y ranking en tiempo real
 
-**IA real (opcional):** sin API key se usa un evaluador simulado. Para usar OpenAI:
+**IA real (opcional):** sin API key se usa un evaluador simulado. Para usar OpenAI, creá un archivo `.env` en la raíz (está en `.gitignore`, nunca se sube) con:
 
-```bash
-OPENAI_API_KEY=sk-... podman compose up -d --build
 ```
+OPENAI_API_KEY=sk-...
+```
+
+Compose lo lee automáticamente. Al arrancar, el log de la API indica qué motor quedó activo (`Motor de evaluación por IA: OpenAI, modelo gpt-6-luna` o `Evaluador simulado`).
 
 ### Desarrollo local
 
@@ -85,3 +87,15 @@ En Development la API también migra y siembra al arrancar. La API key de OpenAI
 ```bash
 dotnet user-secrets set "OpenAI:ApiKey" "sk-..." --project backend/src/WebApi
 ```
+
+### Configuración de la IA
+
+| Clave | Default | Para qué |
+|---|---|---|
+| `OpenAI:ApiKey` | — | Sin key se usa el evaluador simulado |
+| `OpenAI:Model` | `gpt-6-luna` | Modelo de OpenAI |
+| `OpenAI:Temperature` | no se envía | Solo para modelos que la aceptan (los de razonamiento la rechazan) |
+| `RateLimiting:AiEvaluation:PermitLimit` | `5` | Envíos de código por usuario por ventana |
+| `RateLimiting:AiEvaluation:WindowSeconds` | `60` | Duración de la ventana |
+
+En Docker o AWS se pasan como variables de entorno reemplazando `:` por `__` (por ejemplo `OpenAI__Model`). En producción la key va en AWS Secrets Manager o SSM Parameter Store, nunca en el repo.

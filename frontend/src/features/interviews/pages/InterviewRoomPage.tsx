@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, Play, Send } from 'lucide-react';
 import { useAuth } from '../../auth/context';
 import { ApiError, interviewService } from '../services/interview.service';
 import { EvaluationPanel } from '../components/EvaluationPanel';
+import { CertificateDownloadButton } from '../components/CertificateDownloadButton';
 import type { InterviewDetail } from '../types/interview.types';
 
 /**
@@ -135,7 +136,12 @@ export const InterviewRoomPage: React.FC = () => {
 
         {actionError && <p className="text-sm text-red-400">{actionError}</p>}
 
-        {interview.evaluation && <EvaluationPanel evaluation={interview.evaluation} />}
+        {interview.evaluation && (
+          <>
+            <EvaluationPanel evaluation={interview.evaluation} />
+            <CertificateDownloadButton interviewId={interview.id} />
+          </>
+        )}
       </aside>
 
       {/* Columna derecha: editor Monaco (solo lectura si no está en curso) */}

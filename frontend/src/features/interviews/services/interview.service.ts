@@ -43,6 +43,24 @@ export const interviewService = {
   start: (id: string, token: string) =>
     request<InterviewDetail>(`/${id}/start`, token, { method: 'POST' }),
 
+  /** Descarga el PDF como Blob (no JSON): un <a href> común no sirve porque hay que mandar el JWT. */
+  async downloadCertificate(id: string, token: string): Promise<{ blob: Blob; fileName: string }> {
+    const res = await fetch(`${INTERVIEWS_URL}/${id}/certificate`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      const problem = await res.json().catch(() => ({}));
+      throw new ApiError(res.status, problem.detail || problem.title || 'No se pudo generar el certificado.');
+    }
+
+    // El nombre sugerido viene en el header Content-Disposition: attachment; filename=...
+    const disposition = res.headers.get('Content-Disposition') ?? '';
+    const fileName = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? `certificado-mockly-${id.slice(0, 8)}.pdf`;
+
+    return { blob: await res.blob(), fileName };
+  },
+
   submit: (id: string, code: string, token: string) =>
     request<EvaluationResult>(`/${id}/submit`, token, {
       method: 'POST',

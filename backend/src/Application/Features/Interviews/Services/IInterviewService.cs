@@ -13,5 +13,7 @@ public interface IInterviewService
 
     Task<InterviewDetailResponse> StartInterviewAsync(Guid interviewId, Guid candidateId, CancellationToken cancellationToken = default);
 
+    Task<CertificateFileResponse> GetCertificateAsync(Guid interviewId, Guid candidateId, CancellationToken cancellationToken = default);
+
     Task<EvaluationResponse> SubmitCodeAsync(Guid interviewId, Guid candidateId, SubmitCodeRequest request, CancellationToken cancellationToken = default);
 }

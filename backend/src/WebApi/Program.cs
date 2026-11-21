@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Mockly.Application;
 using Mockly.Infrastructure;
+using Mockly.Infrastructure.Persistence.Seed;
 using Mockly.WebApi.Endpoints;
 using Scalar.AspNetCore;
 
@@ -68,6 +69,9 @@ if (app.Environment.IsDevelopment())
                .WithTheme(ScalarTheme.Moon)
                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
+
+    // Datos demo (usuarios, retos y entrevistas). Idempotente: si ya existen, no duplica.
+    await app.Services.SeedDatabaseAsync();
 }
 
 app.UseExceptionHandler();

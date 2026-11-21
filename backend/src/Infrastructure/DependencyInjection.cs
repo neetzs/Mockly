@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Mockly.Infrastructure.Persistence;
+using Mockly.Infrastructure.Persistence.Seed;
 using Mockly.Application.Common.Interfaces;
 using Mockly.Infrastructure.Security;
 namespace Mockly.Infrastructure;
@@ -38,6 +39,8 @@ public static class DependencyInjection
         // Motor de evaluación por IA (mock mientras no hay API key)
         services.AddScoped<IInterviewEvaluationService, FakeInterviewEvaluationService>();
 
+        // Seeder de datos demo (se invoca solo en Development desde Program.cs)
+        services.AddScoped<DbSeeder>();
 
         return services;
     }

@@ -1,6 +1,32 @@
 @WebApi_HostAddress = http://localhost:5067
 
-GET {{WebApi_HostAddress}}/weatherforecast/
-Accept: application/json
+# Datos demo creados por DbSeeder al arrancar en Development:
+#   candidate@mockly.dev / Demo123!   (rol Candidate)
+#   recruiter@mockly.dev / Demo123!   (rol Recruiter)
+# Los ids de las entrevistas demo se imprimen en la consola al levantar la API
+# ("Entrevista demo <id> ..."). Pegá uno en @InterviewId y el token del login en @Token.
 
-###
+@Token = pegar-token-aca
+@InterviewId = pegar-id-aca
+
+### Login del candidato demo
+POST {{WebApi_HostAddress}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "candidate@mockly.dev",
+  "password": "Demo123!"
+}
+
+### Cargar la entrevista (reto para el editor)
+GET {{WebApi_HostAddress}}/api/v1/interviews/{{InterviewId}}
+Authorization: Bearer {{Token}}
+
+### Enviar código para evaluar
+POST {{WebApi_HostAddress}}/api/v1/interviews/{{InterviewId}}/submit
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "code": "public static class Solution { public static string Reverse(string text) { var chars = text.ToCharArray(); for (int i = 0, j = chars.Length - 1; i < j; i++, j--) (chars[i], chars[j]) = (chars[j], chars[i]); return new string(chars); } }"
+}

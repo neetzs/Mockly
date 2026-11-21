@@ -91,10 +91,15 @@ if (app.Environment.IsDevelopment())
                .WithTheme(ScalarTheme.Moon)
                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
-
-    // Datos demo (usuarios, retos y entrevistas). Idempotente: si ya existen, no duplica.
-    await app.Services.SeedDatabaseAsync();
 }
+
+// Preparar la base al arrancar. En Development siempre; en otros entornos (p. ej. el contenedor
+// de docker-compose) solo si se activa por configuración: Database__MigrateOnStartup=true, etc.
+// En producción real conviene dejarlos en false y migrar como paso explícito del deploy.
+var isDevelopment = app.Environment.IsDevelopment();
+await app.Services.InitializeDatabaseAsync(
+    migrate: isDevelopment || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"),
+    seed: isDevelopment || app.Configuration.GetValue<bool>("Database:SeedDemoData"));
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

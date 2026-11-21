@@ -1,3 +1,11 @@
+# Demo completa con un solo comando:  podman compose up -d --build
+#   Frontend → http://localhost:5173
+#   API      → http://localhost:5067
+#   Postgres → localhost:5432
+# Usuarios demo: candidate@mockly.dev / recruiter@mockly.dev  (password: Demo123!)
+#
+# Para desarrollo local (dotnet run + npm run dev) levantá solo la base:  podman compose up -d postgres
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -11,6 +19,42 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # La API no debe arrancar hasta que Postgres acepte conexiones (no alcanza con que el contenedor exista).
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mockly_admin -d mockly_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    container_name: mockly-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # "postgres" es el nombre del servicio: dentro de la red de compose funciona como hostname.
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=mockly_db;Username=mockly_admin;Password=mockly_secure_password_2026"
+      # Demo lista sin pasos manuales: aplica migraciones y carga datos demo al arrancar.
+      Database__MigrateOnStartup: "true"
+      Database__SeedDemoData: "true"
+      # Opcional: IA real. Si no está definida, se usa el evaluador simulado.
+      OpenAI__ApiKey: "${OPENAI_API_KEY:-}"
+    ports:
+      - "5067:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:5067/api/v1
+    container_name: mockly-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
 
 volumes:
   postgres_data:

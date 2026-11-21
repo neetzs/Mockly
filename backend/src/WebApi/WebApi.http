@@ -22,6 +22,10 @@ Content-Type: application/json
 GET {{WebApi_HostAddress}}/api/v1/interviews/{{InterviewId}}
 Authorization: Bearer {{Token}}
 
+### Iniciar la entrevista (NotStarted → InProgress). Obligatorio antes del submit.
+POST {{WebApi_HostAddress}}/api/v1/interviews/{{InterviewId}}/start
+Authorization: Bearer {{Token}}
+
 ### Enviar código para evaluar
 POST {{WebApi_HostAddress}}/api/v1/interviews/{{InterviewId}}/submit
 Authorization: Bearer {{Token}}

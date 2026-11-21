@@ -2,6 +2,8 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Mockly.Application.Common.Exceptions;
+using Mockly.Domain.Exceptions;
 
 namespace Mockly.WebApi.ExceptionHandlers;
 
@@ -33,6 +35,16 @@ public sealed class ApiExceptionHandler : IExceptionHandler
             UnauthorizedAccessException => (
                 StatusCodes.Status401Unauthorized,
                 "No autorizado",
+                exception.Message),
+
+            ForbiddenAccessException => (
+                StatusCodes.Status403Forbidden,
+                "Acceso denegado",
+                exception.Message),
+
+            DomainException => (
+                StatusCodes.Status409Conflict,
+                "Operación no permitida",
                 exception.Message),
 
             _ => (

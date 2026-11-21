@@ -1,5 +1,8 @@
 import tailwindcssAnimate from "tailwindcss-animate";
 
+/** Color que sale de una variable CSS de index.css (formato HSL sin hsl()). */
+const tok = (name) => `hsl(var(--${name}) / <alpha-value>)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
@@ -30,47 +33,30 @@ export default {
       animation: {
         "score-fill": "score-fill 900ms cubic-bezier(0.22, 1, 0.36, 1) both",
       },
+      // Colores semánticos: leen las variables de index.css, que cambian con la clase "dark".
+      // <alpha-value> permite modificadores de opacidad (bg-surface/40, border-border/80).
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        chart: {
-          1: "hsl(var(--chart-1))",
-          2: "hsl(var(--chart-2))",
-          3: "hsl(var(--chart-3))",
-          4: "hsl(var(--chart-4))",
-          5: "hsl(var(--chart-5))",
-        },
+        border: tok("border"),
+        input: tok("input"),
+        ring: tok("ring"),
+        background: tok("background"),
+        foreground: tok("foreground"),
+        surface: tok("surface"),
+        soft: tok("soft"),
+        subtle: tok("subtle"),
+        faint: tok("faint"),
+        brand: tok("brand"),
+        success: tok("success"),
+        warning: tok("warning"),
+        danger: tok("danger"),
+        primary: { DEFAULT: tok("primary"), foreground: tok("primary-foreground") },
+        secondary: { DEFAULT: tok("secondary"), foreground: tok("secondary-foreground") },
+        destructive: { DEFAULT: tok("destructive"), foreground: tok("destructive-foreground") },
+        muted: { DEFAULT: tok("muted"), foreground: tok("muted-foreground") },
+        accent: { DEFAULT: tok("accent"), foreground: tok("accent-foreground") },
+        popover: { DEFAULT: tok("popover"), foreground: tok("popover-foreground") },
+        card: { DEFAULT: tok("card"), foreground: tok("card-foreground") },
+        chart: { 1: tok("chart-1"), 2: tok("chart-2"), 3: tok("chart-3"), 4: tok("chart-4"), 5: tok("chart-5") },
       },
       borderRadius: {
         lg: "var(--radius)",

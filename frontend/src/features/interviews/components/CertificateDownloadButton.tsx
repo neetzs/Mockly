@@ -42,12 +42,12 @@ export const CertificateDownloadButton: React.FC<{ interviewId: string }> = ({ i
         type="button"
         onClick={handleDownload}
         disabled={isDownloading}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 disabled:opacity-60 px-4 py-2.5 text-sm font-semibold text-indigo-200 transition-colors"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 disabled:opacity-60 px-4 py-2.5 text-sm font-semibold text-brand transition-colors"
       >
         {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
         {isDownloading ? 'Generando certificado…' : 'Descargar certificado PDF'}
       </button>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 };

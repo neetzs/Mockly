@@ -89,8 +89,8 @@ export const RecruiterDashboardPage: React.FC = () => {
 
   useEffect(() => () => window.clearTimeout(highlightTimer.current), []);
 
-  if (error) return <p className="text-sm text-red-400">{error}</p>;
-  if (!openings) return <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mx-auto" />;
+  if (error) return <p className="text-sm text-danger">{error}</p>;
+  if (!openings) return <Loader2 className="h-6 w-6 animate-spin text-brand mx-auto" />;
 
   const selected = ranking.find((r) => r.sessionId === selectedId) ?? ranking[0];
   const scores = ranking.map((r) => r.overallScore);
@@ -100,12 +100,12 @@ export const RecruiterDashboardPage: React.FC = () => {
     <div className="w-full space-y-6 text-left">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-white">Dashboard de reclutamiento</h2>
+          <h2 className="text-2xl font-bold text-foreground">Dashboard de reclutamiento</h2>
           {openings.length > 1 ? (
             <select
               value={openingId ?? ''}
               onChange={(e) => setOpeningId(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-200"
+              className="bg-surface border border-border rounded-lg px-3 py-1.5 text-sm text-foreground"
             >
               {openings.map((o) => (
                 <option key={o.id} value={o.id}>
@@ -114,7 +114,7 @@ export const RecruiterDashboardPage: React.FC = () => {
               ))}
             </select>
           ) : (
-            <p className="text-sm text-slate-400">{openings[0]?.title ?? 'No tenés búsquedas creadas.'}</p>
+            <p className="text-sm text-muted-foreground">{openings[0]?.title ?? 'No tenés búsquedas creadas.'}</p>
           )}
         </div>
         <LiveIndicator status={status} />
@@ -137,12 +137,12 @@ export const RecruiterDashboardPage: React.FC = () => {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-slate-900 px-4 py-3 shadow-lg shadow-emerald-900/20">
-          <BellRing className="h-4 w-4 text-emerald-400" />
-          <p className="text-sm text-slate-200">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-surface px-4 py-3 shadow-lg shadow-emerald-900/20">
+          <BellRing className="h-4 w-4 text-success" />
+          <p className="text-sm text-foreground">
             <span className="font-semibold">{toast.candidateName}</span> terminó{' '}
-            <span className="text-slate-400">{toast.challengeTitle}</span> con{' '}
-            <span className="font-mono font-semibold text-emerald-400">{toast.overallScore}</span>
+            <span className="text-muted-foreground">{toast.challengeTitle}</span> con{' '}
+            <span className="font-mono font-semibold text-success">{toast.overallScore}</span>
           </p>
         </div>
       )}
@@ -158,16 +158,16 @@ const STATUS_UI: Record<ConnectionStatus, { text: string; dot: string }> = {
 };
 
 const LiveIndicator: React.FC<{ status: ConnectionStatus }> = ({ status }) => (
-  <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300">
-    <Activity className="h-3.5 w-3.5 text-slate-500" />
+  <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-soft">
+    <Activity className="h-3.5 w-3.5 text-subtle" />
     <span className={`h-2 w-2 rounded-full ${STATUS_UI[status].dot}`} />
     {STATUS_UI[status].text}
   </div>
 );
 
 const Stat: React.FC<{ label: string; value: number }> = ({ label, value }) => (
-  <div className="rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3">
-    <p className="text-[11px] uppercase tracking-wider text-slate-500">{label}</p>
-    <p className="text-2xl font-bold font-mono text-white">{value}</p>
+  <div className="rounded-xl border border-border bg-surface/40 px-4 py-3">
+    <p className="text-[11px] uppercase tracking-wider text-subtle">{label}</p>
+    <p className="text-2xl font-bold font-mono text-foreground">{value}</p>
   </div>
 );

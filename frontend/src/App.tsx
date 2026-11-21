@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./features/auth/context";
+import { ThemeProvider } from "./features/theme";
 import { AuthPage } from "./features/auth/AuthPage";
 import { LandingPage } from "./features/landing/LandingPage";
 import { MyInterviewsPage } from "./features/interviews/pages/MyInterviewsPage";
@@ -11,7 +12,7 @@ import { ProtectedRoute } from "./routes/ProtectedRoute";
 
 /** Layout de la app logueada: navbar + contenedor. Las páginas se renderizan en <Outlet />. */
 const AppLayout: React.FC = () => (
-  <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
+  <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500 selection:text-white">
     <Navbar />
     <main className="flex-1 w-full max-w-7xl mx-auto p-6 md:p-8 flex flex-col">
       <Outlet />
@@ -28,6 +29,7 @@ const AppLayout: React.FC = () => (
  */
 export default function App(): React.JSX.Element {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -49,5 +51,6 @@ export default function App(): React.JSX.Element {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }

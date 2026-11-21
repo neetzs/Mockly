@@ -12,7 +12,7 @@ import { SAMPLES } from './samples';
 /* Contenido                                                                  */
 /* -------------------------------------------------------------------------- */
 
-// Ponderación REAL del motor de IA (ver SystemPrompt en OpenAiInterviewEvaluationService).
+// Ponderación REAL del puntaje general (ver ScoreWeights en backend/src/Domain/Common).
 const CRITERIA = [
   {
     name: 'Resolución del problema',

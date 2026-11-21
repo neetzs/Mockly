@@ -1,8 +1,12 @@
 import React from "react";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./features/auth/context";
 import { AuthPage } from "./features/auth/AuthPage";
+import { MyInterviewsPage } from "./features/interviews/pages/MyInterviewsPage";
+import { InterviewRoomPage } from "./features/interviews/pages/InterviewRoomPage";
 import { LogOut, Code2, User } from "lucide-react";
 
+/** Layout común (navbar + contenedor). Las páginas se renderizan en <Outlet />. */
 const MainLayout: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -46,37 +50,54 @@ const MainLayout: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Container / Dashboard temporal */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 flex flex-col items-center justify-center text-center space-y-6">
-
-        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white max-w-2xl">
-          Bienvenido al centro de evaluación técnica,{" "}
-          <span className="text-indigo-400">{user.fullName}</span>.
-        </h2>
-
-        <p className="text-slate-400 text-sm max-w-lg leading-relaxed">
-          Tu sesión con rol <span className="text-slate-200 font-semibold">{user.role}</span> está autenticada y verificada mediante tokens criptográficos JWT. En el siguiente paso montaremos el entorno con Monaco Editor y la evaluación en tiempo real con <code className="text-indigo-300 font-mono text-xs">Microsoft.Extensions.AI</code>.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md text-left pt-4">
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1">
-            <span className="text-xs text-slate-500 font-mono uppercase">Tu Identificador</span>
-            <p className="text-xs font-mono text-slate-300 truncate">{user.id}</p>
-          </div>
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1">
-            <span className="text-xs text-slate-500 font-mono uppercase">Email Registrado</span>
-            <p className="text-xs font-mono text-slate-300 truncate">{user.email}</p>
-          </div>
-        </div>
+      <main className="flex-1 w-full max-w-7xl mx-auto p-6 md:p-8 flex flex-col">
+        <Outlet />
       </main>
     </div>
   );
 };
 
+/** Home según el rol: el candidato ve sus entrevistas; el reclutador, su dashboard (pendiente). */
+const HomePage: React.FC = () => {
+  const { user } = useAuth();
+
+  if (user?.role === "Recruiter") {
+    return (
+      <div className="text-center space-y-2 py-16">
+        <h2 className="text-2xl font-bold text-white">Dashboard de reclutador</h2>
+        <p className="text-sm text-slate-400">Próximamente: ranking de candidatos en tiempo real.</p>
+      </div>
+    );
+  }
+
+  return <MyInterviewsPage />;
+};
+
+/** La sala es solo para candidatos (el backend igual lo valida con RequireRole). */
+const CandidateOnly: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  return user?.role === "Candidate" ? children : <Navigate to="/" replace />;
+};
+
 export default function App(): React.JSX.Element {
   return (
     <AuthProvider>
-      <MainLayout />
+      <BrowserRouter>
+        <Routes>
+          <Route element={<MainLayout />}>
+            <Route index element={<HomePage />} />
+            <Route
+              path="interviews/:id"
+              element={
+                <CandidateOnly>
+                  <InterviewRoomPage />
+                </CandidateOnly>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

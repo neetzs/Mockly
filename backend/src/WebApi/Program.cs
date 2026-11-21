@@ -1,9 +1,11 @@
 // backend/src/WebApi/Program.cs
+using Mockly.WebApi.ExceptionHandlers;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Mockly.Application;
 using Mockly.Infrastructure;
+using Mockly.Infrastructure.Persistence.Seed;
 using Mockly.WebApi.Endpoints;
 using Scalar.AspNetCore;
 
@@ -50,6 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
 // 4. OpenAPI Nativo de .NET 10
 builder.Services.AddOpenApi();
@@ -66,6 +69,9 @@ if (app.Environment.IsDevelopment())
                .WithTheme(ScalarTheme.Moon)
                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
+
+    // Datos demo (usuarios, retos y entrevistas). Idempotente: si ya existen, no duplica.
+    await app.Services.SeedDatabaseAsync();
 }
 
 app.UseExceptionHandler();
@@ -78,5 +84,8 @@ app.UseAuthorization();
 
 // 6. Mapear endpoints mínimos de Auth
 app.MapAuthEndpoints();
+
+// 7. Mapear endpoints de la sala de entrevista (Bloque 2)
+app.MapInterviewEndpoints();
 
 app.Run();

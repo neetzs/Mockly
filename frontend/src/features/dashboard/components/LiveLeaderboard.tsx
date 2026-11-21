@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trophy } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { languageLabel } from '@/features/interviews/languages';
 import type { CandidateRanking } from '../types/dashboard.types';
 
 interface Props {
@@ -63,7 +64,9 @@ export const LiveLeaderboard: React.FC<Props> = ({ ranking, selectedId, highligh
                 </TableCell>
                 <TableCell className="hidden sm:table-cell text-slate-300">
                   {row.challengeTitle}
-                  <span className="ml-1.5 text-xs font-mono text-slate-500">{row.difficulty}</span>
+                  <span className="ml-1.5 text-xs font-mono text-slate-500">
+                    {languageLabel(row.language)} · {row.difficulty}
+                  </span>
                 </TableCell>
                 <TableCell className={`text-right font-mono font-semibold ${scoreColor(row.overallScore)}`}>
                   {row.overallScore}

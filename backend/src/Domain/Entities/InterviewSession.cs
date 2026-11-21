@@ -1,6 +1,7 @@
 // backend/src/Domain/Entities/InterviewSession.cs
 using Mockly.Domain.Common;
 using Mockly.Domain.Enums;
+using Mockly.Domain.Exceptions;
 
 namespace Mockly.Domain.Entities;
 
@@ -38,14 +39,28 @@ public class InterviewSession : BaseEntity
         TechnicalChallengeId = technicalChallengeId;
     }
 
+    /// Pasa la sesión a InProgress. Si ya estaba en curso no hace nada (idempotente),
+    /// así el candidato puede recargar la página de la sala sin recibir un error.
     public void Start()
     {
+        switch (Status)
+        {
+            case InterviewStatus.InProgress:
+                return;
+            case InterviewStatus.Completed or InterviewStatus.Failed:
+                throw new DomainException("La entrevista ya finalizó y no se puede volver a iniciar.");
+        }
+
         Status = InterviewStatus.InProgress;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
+    /// Registra la solución evaluada. Solo es válido sobre una sesión en curso:
+    /// impide reenviar código (y pisar la nota) en una entrevista ya terminada.
     public void Complete(string submittedCode, int overallScore, string aiFeedbackJson)
     {
+        EnsureInProgress();
+
         SubmittedCode = submittedCode;
         OverallScore = Math.Clamp(overallScore, 0, 100);
         AiFeedbackJson = aiFeedbackJson;
@@ -56,7 +71,22 @@ public class InterviewSession : BaseEntity
 
     public void Fail()
     {
+        EnsureInProgress();
+
         Status = InterviewStatus.Failed;
         UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// Guard clause reutilizable: corta la operación si la sesión no está en curso.
+    public void EnsureInProgress()
+    {
+        if (Status != InterviewStatus.InProgress)
+        {
+            throw new DomainException(Status switch
+            {
+                InterviewStatus.NotStarted => "La entrevista todavía no fue iniciada.",
+                _ => "La entrevista ya finalizó y no admite nuevos envíos."
+            });
+        }
     }
 }

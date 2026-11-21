@@ -1,10 +1,14 @@
 // backend/src/WebApi/Program.cs
+using Mockly.WebApi.ExceptionHandlers;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Mockly.Application;
 using Mockly.Infrastructure;
+using Mockly.Infrastructure.Persistence.Seed;
+using Mockly.Application.Common.Interfaces;
 using Mockly.WebApi.Endpoints;
+using Mockly.WebApi.Hubs;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,10 +50,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
+
+        // SignalR: el navegador NO puede mandar el header Authorization al abrir un WebSocket,
+        // así que el cliente envía el JWT en la query (?access_token=...). Lo aceptamos
+        // SOLO para las rutas de hubs, para no abrir esa puerta en el resto de la API.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+
+// SignalR (tiempo real) + implementación del notificador que usa Application
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IInterviewNotifier, SignalRInterviewNotifier>();
 
 // 4. OpenAPI Nativo de .NET 10
 builder.Services.AddOpenApi();
@@ -68,6 +93,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Preparar la base al arrancar. En Development siempre; en otros entornos (p. ej. el contenedor
+// de docker-compose) solo si se activa por configuración: Database__MigrateOnStartup=true, etc.
+// En producción real conviene dejarlos en false y migrar como paso explícito del deploy.
+var isDevelopment = app.Environment.IsDevelopment();
+await app.Services.InitializeDatabaseAsync(
+    migrate: isDevelopment || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"),
+    seed: isDevelopment || app.Configuration.GetValue<bool>("Database:SeedDemoData"));
+
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
@@ -78,5 +111,13 @@ app.UseAuthorization();
 
 // 6. Mapear endpoints mínimos de Auth
 app.MapAuthEndpoints();
+
+// 7. Mapear endpoints de la sala de entrevista (Bloque 2)
+app.MapInterviewEndpoints();
+
+// 8. Dashboard del reclutador: endpoints REST + hub de SignalR (solo Recruiters)
+app.MapRecruiterEndpoints();
+app.MapHub<InterviewHub>("/hubs/interviews")
+   .RequireAuthorization(policy => policy.RequireRole(nameof(Mockly.Domain.Enums.UserRole.Recruiter)));
 
 app.Run();

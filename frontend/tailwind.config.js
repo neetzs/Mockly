@@ -16,6 +16,20 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        // Geist (instalada vía @fontsource-variable/geist, importada en main.tsx)
+        sans: ['"Geist Variable"', "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      keyframes: {
+        // Barras de puntaje del hero de la landing: crecen de 0 al ancho final una sola vez.
+        "score-fill": {
+          from: { transform: "scaleX(0)" },
+          to: { transform: "scaleX(1)" },
+        },
+      },
+      animation: {
+        "score-fill": "score-fill 900ms cubic-bezier(0.22, 1, 0.36, 1) both",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

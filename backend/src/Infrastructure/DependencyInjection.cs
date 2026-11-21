@@ -15,6 +15,10 @@ namespace Mockly.Infrastructure;
 
 public static class DependencyInjection
 {
+    /// Modelo por defecto si no se configura OpenAI:Model: el más económico de OpenAI
+    /// (USD 0,10 / 0,50 por millón de tokens de entrada / salida, noviembre 2026).
+    private const string DefaultOpenAiModel = "gpt-6-luna";
+
     /// Registra la infraestructura de persistencia conectada a PostgreSQL con reintentos automáticos.
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
@@ -40,11 +44,13 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
         // Motor de evaluación por IA: OpenAI si hay API key configurada, si no el mock.
+        // La key llega por configuración y no importa de dónde: user-secrets en desarrollo,
+        // variable de entorno OpenAI__ApiKey en Docker/AWS. El código es el mismo en todos lados.
         // El resto de la app depende solo de IInterviewEvaluationService y no se entera del cambio.
         var openAiApiKey = configuration["OpenAI:ApiKey"];
         if (!string.IsNullOrWhiteSpace(openAiApiKey))
         {
-            var model = configuration["OpenAI:Model"] ?? "gpt-4o-mini";
+            var model = configuration["OpenAI:Model"] ?? DefaultOpenAiModel;
 
             // IChatClient es la abstracción de Microsoft.Extensions.AI: mañana se puede cambiar
             // OpenAI por Azure, Ollama u otro proveedor tocando solo esta línea.
@@ -52,10 +58,12 @@ public static class DependencyInjection
                 .UseLogging();
 
             services.AddScoped<IInterviewEvaluationService, OpenAiInterviewEvaluationService>();
+            services.AddSingleton(new AiEvaluatorInfo("OpenAI", model));
         }
         else
         {
             services.AddScoped<IInterviewEvaluationService, FakeInterviewEvaluationService>();
+            services.AddSingleton(new AiEvaluatorInfo("Evaluador simulado", null));
         }
 
         // Certificados PDF. QuestPDF exige declarar la licencia: Community es gratuita

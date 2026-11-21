@@ -4,6 +4,7 @@ using Mockly.Application.Features.Interviews.DTOs;
 using Mockly.Application.Features.Interviews.Services;
 using Mockly.Domain.Enums;
 using Mockly.WebApi.Extensions;
+using Mockly.WebApi.RateLimiting;
 
 namespace Mockly.WebApi.Endpoints;
 
@@ -70,9 +71,11 @@ public static class InterviewEndpoints
             return Results.Ok(response);
         })
         .WithName("SubmitCode")
+        .RequireRateLimiting(RateLimitPolicies.AiEvaluation) // cada envío cuesta tokens de la IA
         .Produces<EvaluationResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesProblem(StatusCodes.Status409Conflict);
+        .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status429TooManyRequests);
 
         return app;
     }

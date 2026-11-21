@@ -9,6 +9,8 @@ using Mockly.Infrastructure.Persistence.Seed;
 using Mockly.Application.Common.Interfaces;
 using Mockly.WebApi.Endpoints;
 using Mockly.WebApi.Hubs;
+using Mockly.WebApi.RateLimiting;
+using Mockly.Infrastructure.AI;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -69,6 +71,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddMocklyRateLimiting(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
@@ -80,6 +83,9 @@ builder.Services.AddScoped<IInterviewNotifier, SignalRInterviewNotifier>();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Deja en el log qué motor de IA quedó activo: confirma de un vistazo si el deploy tomó la API key.
+app.Logger.LogInformation("Motor de evaluación por IA: {Evaluator}", app.Services.GetRequiredService<AiEvaluatorInfo>());
 
 // 5. Exponer OpenAPI y Scalar en entorno de desarrollo
 if (app.Environment.IsDevelopment())
@@ -108,6 +114,9 @@ app.UseCors(frontendCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Va DESPUÉS de autenticación: la política particiona por usuario y necesita saber quién es.
+app.UseRateLimiter();
 
 // 6. Mapear endpoints mínimos de Auth
 app.MapAuthEndpoints();

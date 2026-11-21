@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./features/auth/context";
 import { AuthPage } from "./features/auth/AuthPage";
 import { MyInterviewsPage } from "./features/interviews/pages/MyInterviewsPage";
 import { InterviewRoomPage } from "./features/interviews/pages/InterviewRoomPage";
+import { RecruiterDashboardPage } from "./features/dashboard/RecruiterDashboardPage";
 import { LogOut, Code2, User } from "lucide-react";
 
 /** Layout común (navbar + contenedor). Las páginas se renderizan en <Outlet />. */
@@ -57,17 +58,12 @@ const MainLayout: React.FC = () => {
   );
 };
 
-/** Home según el rol: el candidato ve sus entrevistas; el reclutador, su dashboard (pendiente). */
+/** Home según el rol: el candidato ve sus entrevistas; el reclutador, su dashboard en tiempo real. */
 const HomePage: React.FC = () => {
   const { user } = useAuth();
 
   if (user?.role === "Recruiter") {
-    return (
-      <div className="text-center space-y-2 py-16">
-        <h2 className="text-2xl font-bold text-white">Dashboard de reclutador</h2>
-        <p className="text-sm text-slate-400">Próximamente: ranking de candidatos en tiempo real.</p>
-      </div>
-    );
+    return <RecruiterDashboardPage />;
   }
 
   return <MyInterviewsPage />;

@@ -7,6 +7,7 @@ import { ApiError, interviewService } from '../services/interview.service';
 import { EvaluationPanel } from '../components/EvaluationPanel';
 import { CertificateDownloadButton } from '../components/CertificateDownloadButton';
 import { languageLabel, monacoLanguageId } from '../languages';
+import { useTheme } from '@/features/theme';
 import type { InterviewDetail } from '../types/interview.types';
 
 /**
@@ -18,6 +19,7 @@ import type { InterviewDetail } from '../types/interview.types';
 export const InterviewRoomPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { token, logout } = useAuth();
+  const { resolvedTheme } = useTheme();
 
   const [interview, setInterview] = useState<InterviewDetail | null>(null);
   const [code, setCode] = useState('');
@@ -82,14 +84,14 @@ export const InterviewRoomPage: React.FC = () => {
   if (loadError) {
     return (
       <div className="space-y-4 text-center">
-        <p className="text-sm text-red-400">{loadError}</p>
+        <p className="text-sm text-danger">{loadError}</p>
         <BackLink />
       </div>
     );
   }
 
   if (!interview) {
-    return <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mx-auto" />;
+    return <Loader2 className="h-6 w-6 animate-spin text-brand mx-auto" />;
   }
 
   const isInProgress = interview.status === 'InProgress';
@@ -102,11 +104,11 @@ export const InterviewRoomPage: React.FC = () => {
         <BackLink />
 
         <div className="space-y-2">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-indigo-300">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-brand">
             {languageLabel(interview.language)} · {interview.difficulty}
           </span>
-          <h2 className="text-2xl font-bold text-white">{interview.challengeTitle}</h2>
-          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+          <h2 className="text-2xl font-bold text-foreground">{interview.challengeTitle}</h2>
+          <p className="text-sm text-soft leading-relaxed whitespace-pre-line">
             {unwrapLines(interview.challengeDescription)}
           </p>
         </div>
@@ -135,7 +137,7 @@ export const InterviewRoomPage: React.FC = () => {
           </button>
         )}
 
-        {actionError && <p className="text-sm text-red-400">{actionError}</p>}
+        {actionError && <p className="text-sm text-danger">{actionError}</p>}
 
         {interview.evaluation && (
           <>
@@ -146,14 +148,14 @@ export const InterviewRoomPage: React.FC = () => {
       </aside>
 
       {/* Columna derecha: editor Monaco (solo lectura si no está en curso) */}
-      <div className="relative rounded-xl border border-slate-800 overflow-hidden min-h-[480px]">
+      <div className="relative rounded-xl border border-border overflow-hidden min-h-[480px]">
         <Editor
           height="100%"
           language={monacoLanguageId(interview.language)}
-          theme="vs-dark"
+          theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
           value={code}
           onChange={(value) => setCode(value ?? '')}
-          loading={<Loader2 className="h-6 w-6 animate-spin text-indigo-400" />}
+          loading={<Loader2 className="h-6 w-6 animate-spin text-brand" />}
           options={{
             readOnly: !isInProgress || isBusy,
             minimap: { enabled: false },
@@ -178,14 +180,14 @@ export const InterviewRoomPage: React.FC = () => {
 const unwrapLines = (text: string) => text.replace(/([^\n])\n(?!\n)/g, '$1 ');
 
 const BackLink: React.FC = () => (
-  <Link to="/interviews" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200">
+  <Link to="/interviews" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
     <ArrowLeft className="h-3.5 w-3.5" />
     Mis entrevistas
   </Link>
 );
 
 const Overlay: React.FC<{ text: string }> = ({ text }) => (
-  <div className="absolute inset-0 flex items-center justify-center bg-slate-950/60 backdrop-blur-[1px]">
-    <p className="text-sm text-slate-300 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2">{text}</p>
+  <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
+    <p className="text-sm text-soft bg-surface border border-border rounded-lg px-4 py-2">{text}</p>
   </div>
 );

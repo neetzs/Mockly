@@ -1,10 +1,24 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>Mockly</title>
+    <!--
+      Aplica el tema ANTES de que cargue React: si esperáramos al ThemeProvider,
+      la página se vería un instante con el tema equivocado (el "flash").
+      Usa la misma clave de localStorage que src/features/theme/themeContextDef.ts.
+    -->
+    <script>
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem('mockly_theme'); } catch (e) {}
+        var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', dark);
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

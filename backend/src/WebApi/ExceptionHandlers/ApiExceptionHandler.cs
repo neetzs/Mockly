@@ -42,6 +42,11 @@ public sealed class ApiExceptionHandler : IExceptionHandler
                 "Acceso denegado",
                 exception.Message),
 
+            AiEvaluationException => (
+                StatusCodes.Status503ServiceUnavailable,
+                "Evaluación no disponible",
+                exception.Message),
+
             DomainException => (
                 StatusCodes.Status409Conflict,
                 "Operación no permitida",

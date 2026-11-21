@@ -2,6 +2,8 @@
 using Mockly.Domain.Interfaces;
 using Mockly.Infrastructure.AI;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
+using OpenAI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Mockly.Infrastructure.Persistence;
@@ -36,8 +38,24 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
-        // Motor de evaluación por IA (mock mientras no hay API key)
-        services.AddScoped<IInterviewEvaluationService, FakeInterviewEvaluationService>();
+        // Motor de evaluación por IA: OpenAI si hay API key configurada, si no el mock.
+        // El resto de la app depende solo de IInterviewEvaluationService y no se entera del cambio.
+        var openAiApiKey = configuration["OpenAI:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(openAiApiKey))
+        {
+            var model = configuration["OpenAI:Model"] ?? "gpt-4o-mini";
+
+            // IChatClient es la abstracción de Microsoft.Extensions.AI: mañana se puede cambiar
+            // OpenAI por Azure, Ollama u otro proveedor tocando solo esta línea.
+            services.AddChatClient(new OpenAIClient(openAiApiKey).GetChatClient(model).AsIChatClient())
+                .UseLogging();
+
+            services.AddScoped<IInterviewEvaluationService, OpenAiInterviewEvaluationService>();
+        }
+        else
+        {
+            services.AddScoped<IInterviewEvaluationService, FakeInterviewEvaluationService>();
+        }
 
         // Seeder de datos demo (se invoca solo en Development desde Program.cs)
         services.AddScoped<DbSeeder>();

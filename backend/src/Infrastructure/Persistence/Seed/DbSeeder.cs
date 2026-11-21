@@ -12,13 +12,17 @@ namespace Mockly.Infrastructure.Persistence.Seed;
 
 /// Carga datos de demostración (usuarios, búsqueda laboral, retos y una entrevista)
 /// para que cualquiera del equipo pueda probar la API apenas levanta el proyecto.
-/// Solo debe ejecutarse en Development (ver Program.cs).
+/// Se ejecuta en Development o cuando Database:SeedDemoData = true (ver Program.cs).
 public sealed class DbSeeder
 {
     // Credenciales demo: documentadas en el README para que el equipo pueda loguearse.
     public const string RecruiterEmail = "recruiter@mockly.dev";
     public const string CandidateEmail = "candidate@mockly.dev";
     public const string DemoPassword = "Demo123!";
+
+    // Títulos de las búsquedas demo: también sirven como clave de idempotencia de cada paso.
+    private const string DotNetJobTitle = "Backend Developer Jr. (.NET)";
+    private const string FullstackJobTitle = "Desarrollador/a Fullstack";
 
     private readonly ApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
@@ -45,6 +49,10 @@ public sealed class DbSeeder
         // Tiene su propio chequeo de idempotencia, así también se agrega en bases sembradas antes.
         await SeedRankingDataAsync(cancellationToken);
 
+        // Paso 8 — Segunda búsqueda con retos en otros lenguajes (Python, TypeScript, Java, SQL).
+        // Va después del ranking para poder sumarle entrevistas evaluadas a esos mismos candidatos.
+        await SeedMultiLanguageDataAsync(cancellationToken);
+
         await LogDemoSessionsAsync(cancellationToken);
     }
 
@@ -60,7 +68,7 @@ public sealed class DbSeeder
         // Paso 3 — Búsqueda laboral. BaseEntity genera el Id en el constructor (Guid.NewGuid()),
         // así que recruiter.Id ya existe ANTES de guardar: podemos encadenar las FK en memoria.
         var jobOpening = new JobOpening(
-            "Backend Developer Jr. (.NET)",
+            DotNetJobTitle,
             "Búsqueda de desarrollador/a backend junior con conocimientos de C#, LINQ y estructuras de datos.",
             recruiter.Id);
 
@@ -96,7 +104,7 @@ public sealed class DbSeeder
         // Reutilizamos la búsqueda y los retos del reclutador demo.
         var jobOpening = await _context.JobOpenings
             .Include(j => j.Challenges)
-            .FirstAsync(j => j.Recruiter.Email == RecruiterEmail, cancellationToken);
+            .FirstAsync(j => j.Recruiter.Email == RecruiterEmail && j.Title == DotNetJobTitle, cancellationToken);
         var challenges = jobOpening.Challenges.OrderBy(c => c.Difficulty).ToList();
 
         var passwordHash = _passwordHasher.HashPassword(DemoPassword);
@@ -112,26 +120,79 @@ public sealed class DbSeeder
         foreach (var sample in samples)
         {
             var candidate = new User(sample.Email, passwordHash, sample.Name, UserRole.Candidate);
-            var session = new InterviewSession(candidate.Id, jobOpening.Id, challenges[sample.Challenge].Id);
-
-            // Mismo ponderado que le pedimos a la IA: 50% resolución, 30% calidad, 20% arquitectura.
-            var overall = (int)Math.Round(sample.Solving * 0.5 + sample.Quality * 0.3 + sample.Architecture * 0.2);
-            var result = new TechnicalScoreResult(
-                overall, sample.Quality, sample.Solving, sample.Architecture,
-                "Evaluación de ejemplo generada por el seeder.",
-                ["Solución correcta para los casos principales."],
-                ["Agregar tests unitarios."]);
-
-            // Respetamos las reglas del dominio: primero Start(), después Complete().
-            session.Start();
-            session.Complete("// código de ejemplo del seeder", overall, JsonSerializer.Serialize(result));
-
             _context.Users.Add(candidate);
-            _context.InterviewSessions.Add(session);
+            _context.InterviewSessions.Add(CreateCompletedSession(
+                candidate.Id, jobOpening.Id, challenges[sample.Challenge].Id, sample.Quality, sample.Solving, sample.Architecture));
         }
 
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Seed de ranking completado: {Count} entrevistas evaluadas de ejemplo.", samples.Length);
+    }
+
+    private async Task SeedMultiLanguageDataAsync(CancellationToken cancellationToken)
+    {
+        // Idempotencia propia: así también se agrega en bases que ya tenían el seed de C#.
+        if (await _context.JobOpenings.AnyAsync(j => j.Title == FullstackJobTitle, cancellationToken))
+        {
+            return;
+        }
+
+        var recruiter = await _context.Users.FirstAsync(u => u.Email == RecruiterEmail, cancellationToken);
+        var candidate = await _context.Users.FirstAsync(u => u.Email == CandidateEmail, cancellationToken);
+
+        var jobOpening = new JobOpening(
+            FullstackJobTitle,
+            "Búsqueda fullstack: scripting en Python, frontend en TypeScript, backend en Java y consultas SQL.",
+            recruiter.Id);
+        var challenges = CreateMultiLanguageChallenges(jobOpening.Id);
+
+        _context.JobOpenings.Add(jobOpening);
+        _context.TechnicalChallenges.AddRange(challenges);
+
+        // Una entrevista por reto para el candidato demo, igual que en la búsqueda .NET.
+        _context.InterviewSessions.AddRange(
+            challenges.Select(challenge => new InterviewSession(candidate.Id, jobOpening.Id, challenge.Id)));
+
+        // Ranking inicial de esta búsqueda: reutilizamos a los candidatos de ejemplo si existen.
+        var rankingCandidates = await _context.Users
+            .Where(u => u.Email.EndsWith("@ranking.mockly.dev"))
+            .OrderBy(u => u.Email)
+            .ToListAsync(cancellationToken);
+
+        // (índice del reto, calidad, resolución, arquitectura) — uno por candidato de ejemplo
+        var samples = new (int Challenge, int Quality, int Solving, int Architecture)[]
+        {
+            (0, 86, 90, 74),   // Python
+            (3, 68, 72, 61),   // SQL
+            (1, 90, 84, 88),   // TypeScript
+        };
+
+        foreach (var (user, sample) in rankingCandidates.Zip(samples))
+        {
+            _context.InterviewSessions.Add(CreateCompletedSession(
+                user.Id, jobOpening.Id, challenges[sample.Challenge].Id, sample.Quality, sample.Solving, sample.Architecture));
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Seed multilenguaje completado: {Count} retos en {Job}.", challenges.Count, FullstackJobTitle);
+    }
+
+    /// Entrevista ya evaluada para el ranking, respetando las reglas del dominio (Start → Complete).
+    private static InterviewSession CreateCompletedSession(Guid candidateId, Guid jobOpeningId, Guid challengeId, int quality, int solving, int architecture)
+    {
+        var session = new InterviewSession(candidateId, jobOpeningId, challengeId);
+
+        // Mismo ponderado que le pedimos a la IA: 50% resolución, 30% calidad, 20% arquitectura.
+        var overall = (int)Math.Round(solving * 0.5 + quality * 0.3 + architecture * 0.2);
+        var result = new TechnicalScoreResult(
+            overall, quality, solving, architecture,
+            "Evaluación de ejemplo generada por el seeder.",
+            ["Solución correcta para los casos principales."],
+            ["Agregar tests unitarios."]);
+
+        session.Start();
+        session.Complete("// código de ejemplo del seeder", overall, JsonSerializer.Serialize(result));
+        return session;
     }
 
     /// Imprime en consola los ids de las entrevistas demo, para copiarlos en Scalar / WebApi.http.
@@ -168,6 +229,7 @@ public sealed class DbSeeder
             }
             """,
             ChallengeDifficulty.Junior,
+            ProgrammingLanguage.CSharp,
             jobOpeningId),
 
         new TechnicalChallenge(
@@ -187,6 +249,7 @@ public sealed class DbSeeder
             }
             """,
             ChallengeDifficulty.MidLevel,
+            ProgrammingLanguage.CSharp,
             jobOpeningId),
 
         new TechnicalChallenge(
@@ -207,19 +270,106 @@ public sealed class DbSeeder
             }
             """,
             ChallengeDifficulty.Senior,
+            ProgrammingLanguage.CSharp,
+            jobOpeningId),
+    ];
+
+    private static List<TechnicalChallenge> CreateMultiLanguageChallenges(Guid jobOpeningId) =>
+    [
+        new TechnicalChallenge(
+            "Contar palabras",
+            """
+            Implementá count_words(text) que devuelva un diccionario con la cantidad de apariciones
+            de cada palabra, sin distinguir mayúsculas y ignorando signos de puntuación.
+            Ejemplo: "Hola, hola mundo" → {"hola": 2, "mundo": 1}.
+            """,
+            """
+            def count_words(text: str) -> dict[str, int]:
+                # Tu código acá
+                raise NotImplementedError
+            """,
+            ChallengeDifficulty.Junior,
+            ProgrammingLanguage.Python,
+            jobOpeningId),
+
+        new TechnicalChallenge(
+            "Agrupar por propiedad",
+            """
+            Implementá groupBy(items, key) que agrupe un array de objetos por el valor de una propiedad,
+            manteniendo el tipado. Ejemplo: groupBy(users, "role") → { admin: [...], user: [...] }.
+            No uses librerías externas.
+            """,
+            """
+            export function groupBy<T, K extends keyof T>(items: T[], key: K): Record<string, T[]> {
+              // Tu código acá
+              throw new Error("Not implemented");
+            }
+            """,
+            ChallengeDifficulty.MidLevel,
+            ProgrammingLanguage.TypeScript,
+            jobOpeningId),
+
+        new TechnicalChallenge(
+            "Detectar anagramas",
+            """
+            Implementá isAnagram(a, b) que devuelva true si las dos palabras son anagramas
+            (mismas letras con la misma frecuencia), ignorando mayúsculas y espacios.
+            Ejemplo: "Roma" y "amor" → true. Apuntá a una solución O(n).
+            """,
+            """
+            public class Solution {
+                public static boolean isAnagram(String a, String b) {
+                    // Tu código acá
+                    throw new UnsupportedOperationException();
+                }
+            }
+            """,
+            ChallengeDifficulty.MidLevel,
+            ProgrammingLanguage.Java,
+            jobOpeningId),
+
+        new TechnicalChallenge(
+            "Top clientes por facturación",
+            """
+            Con las tablas customers(id, name, country) y orders(id, customer_id, total, created_at),
+            escribí una consulta que devuelva los 5 clientes con mayor facturación de 2025: nombre, país,
+            cantidad de pedidos y total facturado, de mayor a menor. Los clientes sin pedidos en 2025 no aparecen.
+            """,
+            """
+            -- customers(id, name, country)
+            -- orders(id, customer_id, total, created_at)
+            SELECT
+              -- Tu consulta acá
+            """,
+            ChallengeDifficulty.Senior,
+            ProgrammingLanguage.Sql,
             jobOpeningId),
     ];
 }
 
-/// Extensión para ejecutar el seeder desde Program.cs sin exponer detalles de EF.
+/// Extensión para preparar la base al arrancar, desde Program.cs, sin exponer detalles de EF.
 public static class DbSeederExtensions
 {
-    public static async Task SeedDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
+    /// Aplica las migraciones pendientes y/o carga los datos demo.
+    /// - Migrar: crea/actualiza las tablas (equivale a `dotnet ef database update`).
+    ///   Es lo que permite que el contenedor arranque contra una base vacía sin pasos manuales.
+    /// - Sembrar: carga usuarios, retos y entrevistas demo (idempotente).
+    public static async Task InitializeDatabaseAsync(this IServiceProvider services, bool migrate, bool seed, CancellationToken cancellationToken = default)
     {
         // El DbContext es Scoped (uno por request). Al arrancar no hay request,
         // así que creamos un scope a mano y lo descartamos al terminar (using).
         using var scope = services.CreateScope();
-        var seeder = scope.ServiceProvider.GetRequiredService<DbSeeder>();
-        await seeder.SeedAsync(cancellationToken);
+
+        if (migrate)
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await context.Database.MigrateAsync(cancellationToken);
+        }
+
+        if (seed)
+        {
+            var seeder = scope.ServiceProvider.GetRequiredService<DbSeeder>();
+            await seeder.SeedAsync(cancellationToken);
+        }
     }
 }

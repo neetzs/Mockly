@@ -1,4 +1,6 @@
 // backend/src/Domain/Interfaces/IInterviewEvaluationService.cs
+using Mockly.Domain.Enums;
+
 namespace Mockly.Domain.Interfaces;
 
 /// Objeto inmutable que modela el resultado de la evaluación estructurada del LLM.
@@ -17,6 +19,7 @@ public interface IInterviewEvaluationService
 {
     Task<TechnicalScoreResult> EvaluateSubmissionAsync(
         string challengeDescription,
+        ProgrammingLanguage language,
         string submittedCode,
         CancellationToken cancellationToken = default);
 }

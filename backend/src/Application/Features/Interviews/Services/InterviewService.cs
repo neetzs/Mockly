@@ -49,6 +49,7 @@ public sealed class InterviewService : IInterviewService
                 s.Status.ToString(),
                 s.TechnicalChallenge.Title,
                 s.TechnicalChallenge.Difficulty.ToString(),
+                s.TechnicalChallenge.Language.ToString(),
                 s.OverallScore,
                 s.CompletedAtUtc))
             .ToListAsync(cancellationToken);
@@ -92,6 +93,7 @@ public sealed class InterviewService : IInterviewService
             session.JobOpening.Title,
             session.TechnicalChallenge.Title,
             session.TechnicalChallenge.Difficulty.ToString(),
+            session.TechnicalChallenge.Language.ToDisplayName(),
             session.CompletedAtUtc ?? session.UpdatedAtUtc ?? session.CreatedAtUtc,
             evaluation));
 
@@ -119,6 +121,7 @@ public sealed class InterviewService : IInterviewService
         // no del candidato. La sesión queda InProgress y puede reintentar el envío.
         var result = await _evaluationService.EvaluateSubmissionAsync(
             session.TechnicalChallenge.Description,
+            session.TechnicalChallenge.Language,
             request.Code,
             cancellationToken);
 
@@ -178,6 +181,7 @@ public sealed class InterviewService : IInterviewService
             session.TechnicalChallenge.Description,
             session.TechnicalChallenge.InitialCodeTemplate,
             session.TechnicalChallenge.Difficulty.ToString(),
+            session.TechnicalChallenge.Language.ToString(),
             string.IsNullOrEmpty(session.SubmittedCode) ? null : session.SubmittedCode,
             evaluation);
     }

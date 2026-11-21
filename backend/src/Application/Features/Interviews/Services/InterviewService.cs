@@ -47,6 +47,8 @@ public sealed class InterviewService : IInterviewService
             .Select(s => new InterviewSummaryResponse(
                 s.Id,
                 s.Status.ToString(),
+                s.TechnicalChallengeId,
+                s.JobOpening != null ? s.JobOpening.Title : null,
                 s.TechnicalChallenge.Title,
                 s.TechnicalChallenge.Difficulty.ToString(),
                 s.TechnicalChallenge.Language.ToString(),
@@ -90,7 +92,7 @@ public sealed class InterviewService : IInterviewService
         var pdf = _certificateGenerator.GeneratePdfCertificate(new CertificateData(
             session.Id,
             session.Candidate.FullName,
-            session.JobOpening.Title,
+            session.JobOpening?.Title,
             session.TechnicalChallenge.Title,
             session.TechnicalChallenge.Difficulty.ToString(),
             session.TechnicalChallenge.Language.ToDisplayName(),
@@ -130,14 +132,17 @@ public sealed class InterviewService : IInterviewService
         session.Complete(request.Code, result.OverallScore, feedbackJson);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Paso 6 — Avisar en tiempo real al reclutador dueño de la búsqueda.
+        // Paso 6 — Avisar en tiempo real al reclutador dueño de la búsqueda (las prácticas no avisan a nadie).
         // Va DESPUÉS de guardar: nunca anunciamos algo que no quedó persistido.
         // Usamos CancellationToken.None: si el candidato cerró la pestaña justo ahora,
         // el resultado ya se guardó y el reclutador igual tiene que enterarse.
-        await _notifier.NotifyInterviewCompletedAsync(
-            session.JobOpening.RecruiterId,
-            new InterviewCompletedEvent(session.JobOpeningId, CandidateRankingResponse.FromSession(session)),
-            CancellationToken.None);
+        if (session.JobOpening is { } jobOpening)
+        {
+            await _notifier.NotifyInterviewCompletedAsync(
+                jobOpening.RecruiterId,
+                new InterviewCompletedEvent(jobOpening.Id, CandidateRankingResponse.FromSession(session)),
+                CancellationToken.None);
+        }
 
         // Paso 7 — Devolver el DTO a la API.
         return ToEvaluationResponse(result);
@@ -177,6 +182,8 @@ public sealed class InterviewService : IInterviewService
         return new(
             session.Id,
             session.Status.ToString(),
+            session.TechnicalChallengeId,
+            session.JobOpening?.Title,
             session.TechnicalChallenge.Title,
             session.TechnicalChallenge.Description,
             session.TechnicalChallenge.InitialCodeTemplate,

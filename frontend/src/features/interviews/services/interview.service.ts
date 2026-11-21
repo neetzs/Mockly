@@ -1,7 +1,7 @@
 import type { EvaluationResult, InterviewDetail, InterviewSummary } from '../types/interview.types';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5067/api/v1';
-const INTERVIEWS_URL = `${BASE_URL}/interviews`;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5067/api/v1';
+const INTERVIEWS_URL = `${API_BASE_URL}/interviews`;
 
 /** Error HTTP con el status, para que la UI distinga 401 (sesión vencida), 409 (estado), 503 (IA caída)... */
 export class ApiError extends Error {
@@ -13,9 +13,10 @@ export class ApiError extends Error {
   }
 }
 
-/** fetch con el JWT y manejo de ProblemDetails (el formato de error que devuelve ApiExceptionHandler). */
-async function request<T>(path: string, token: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${INTERVIEWS_URL}${path}`, {
+/** fetch con el JWT y manejo de ProblemDetails (el formato de error que devuelve ApiExceptionHandler).
+ *  Se exporta para que otras features (práctica) reutilicen el mismo manejo de errores. */
+export async function apiRequest<T>(url: string, token: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(url, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -32,6 +33,9 @@ async function request<T>(path: string, token: string, init: RequestInit = {}): 
 
   return res.json() as Promise<T>;
 }
+
+const request = <T,>(path: string, token: string, init: RequestInit = {}) =>
+  apiRequest<T>(`${INTERVIEWS_URL}${path}`, token, init);
 
 export const interviewService = {
   getMine: (token: string, signal?: AbortSignal) =>

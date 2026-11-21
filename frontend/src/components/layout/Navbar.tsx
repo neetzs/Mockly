@@ -6,11 +6,12 @@ import { homePathFor } from '@/routes/paths';
 import { ThemeToggle } from '@/features/theme';
 
 export const Logo: React.FC = () => (
-  <Link to="/" className="flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400">
+  <Link to="/" aria-label="Mockly, ir al inicio" className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400">
     <span className="p-1.5 bg-indigo-600/20 border border-indigo-500/30 rounded-lg">
       <Code2 className="h-5 w-5 text-brand" />
     </span>
-    <span className="text-lg font-semibold tracking-tight text-foreground">Mockly</span>
+    {/* En pantallas muy angostas queda solo el ícono para que entren los links */}
+    <span className="hidden min-[400px]:inline text-lg font-semibold tracking-tight text-foreground">Mockly</span>
   </Link>
 );
 
@@ -24,16 +25,32 @@ export const Navbar: React.FC = () => {
         <Logo />
 
         {user ? (
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             <ThemeToggle />
             <NavLink
               to={homePathFor(user.role)}
               className={({ isActive }) =>
-                `rounded-lg px-3 py-1.5 text-sm transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`
+                `whitespace-nowrap rounded-lg px-2 py-1.5 text-sm transition-colors sm:px-3 ${isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`
               }
             >
-              {user.role === 'Recruiter' ? 'Dashboard' : 'Mis entrevistas'}
+              {user.role === 'Recruiter' ? 'Dashboard' : (
+                <>
+                  {/* En mobile no entran los dos textos largos */}
+                  <span className="sm:hidden">Entrevistas</span>
+                  <span className="hidden sm:inline">Mis entrevistas</span>
+                </>
+              )}
             </NavLink>
+            {user.role === 'Candidate' && (
+              <NavLink
+                to="/practice"
+                className={({ isActive }) =>
+                  `whitespace-nowrap rounded-lg px-2 py-1.5 text-sm transition-colors sm:px-3 ${isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`
+                }
+              >
+                Practicar
+              </NavLink>
+            )}
             <span className="hidden sm:flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs">
               <User className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="font-medium text-foreground">{user.fullName}</span>

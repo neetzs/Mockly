@@ -6,7 +6,7 @@ namespace Mockly.Domain.Interfaces;
 public sealed record CertificateData(
     Guid CertificateId,          // = id de la sesión; sirve como código de verificación
     string CandidateName,
-    string JobTitle,
+    string? JobTitle,            // null = intento de práctica (sin búsqueda)
     string ChallengeTitle,
     string Difficulty,
     string Language,             // nombre legible: "C#", "Python", "SQL"...

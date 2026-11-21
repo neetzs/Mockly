@@ -30,9 +30,11 @@ public sealed class InterviewSessionConfiguration : IEntityTypeConfiguration<Int
             .HasForeignKey(s => s.CandidateId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // FK opcional: las sesiones de práctica no pertenecen a ninguna búsqueda.
         builder.HasOne(s => s.JobOpening)
             .WithMany(j => j.InterviewSessions)
             .HasForeignKey(s => s.JobOpeningId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(s => s.TechnicalChallenge)

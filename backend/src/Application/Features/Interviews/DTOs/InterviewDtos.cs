@@ -9,6 +9,7 @@ public sealed record InterviewDetailResponse(
     string ChallengeDescription,
     string InitialCodeTemplate,
     string Difficulty,
+    string Language, // nombre del enum (CSharp, Python, Sql...): el frontend lo mapea al editor
     string? SubmittedCode,
     EvaluationResponse? Evaluation // solo viene cuando la entrevista está Completed
 );
@@ -19,6 +20,7 @@ public sealed record InterviewSummaryResponse(
     string Status,
     string ChallengeTitle,
     string Difficulty,
+    string Language,
     int? OverallScore,
     DateTime? CompletedAtUtc
 );

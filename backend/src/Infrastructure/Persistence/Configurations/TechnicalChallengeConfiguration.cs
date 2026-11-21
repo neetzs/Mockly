@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Mockly.Domain.Entities;
+using Mockly.Domain.Enums;
 
 namespace Mockly.Infrastructure.Persistence.Configurations;
 
@@ -29,6 +30,12 @@ public sealed class TechnicalChallengeConfiguration : IEntityTypeConfiguration<T
         builder.Property(t => t.Difficulty)
             .IsRequired()
             .HasConversion<int>();
+
+        // Los retos que existían antes de esta columna eran todos de C#: ese es el default.
+        builder.Property(t => t.Language)
+            .IsRequired()
+            .HasConversion<int>()
+            .HasDefaultValue(ProgrammingLanguage.CSharp);
 
         // Si se elimina la búsqueda laboral, se eliminan sus retos en cascada
         builder.HasOne(t => t.JobOpening)

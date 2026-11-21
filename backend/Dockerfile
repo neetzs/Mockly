@@ -1,28 +1,29 @@
 # ------------------------------------------------------------------------------
 # Etapa 1: Build y compilación con el SDK oficial de .NET 10
 # ------------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# Copiar archivos de solución y proyectos para aprovechar el cache de dependencias NuGet
-COPY Mockly.sln ./
+# Copiar solución y proyectos primero: si no cambian, Docker reutiliza la capa del restore
+# (cache de dependencias NuGet) y el build es mucho más rápido.
+COPY Mockly.slnx ./
 COPY src/Domain/Domain.csproj src/Domain/
 COPY src/Application/Application.csproj src/Application/
 COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
 COPY src/WebApi/WebApi.csproj src/WebApi/
 
 # Restaurar paquetes
-RUN dotnet restore
+RUN dotnet restore Mockly.slnx
 
 # Copiar el código fuente completo y compilar en modo Release
 COPY src/ src/
 WORKDIR /app/src/WebApi
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
 
 # ------------------------------------------------------------------------------
 # Etapa 2: Imagen final optimizada y ligera con ASP.NET Core Runtime
 # ------------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Variables de entorno por defecto para producción
@@ -36,4 +37,5 @@ COPY --from=build /app/publish .
 
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "Mockly.WebApi.dll"]
+# El ensamblado toma el nombre del .csproj (WebApi.csproj → WebApi.dll), no del namespace.
+ENTRYPOINT ["dotnet", "WebApi.dll"]

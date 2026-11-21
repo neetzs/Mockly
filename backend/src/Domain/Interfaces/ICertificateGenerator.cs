@@ -9,6 +9,7 @@ public sealed record CertificateData(
     string JobTitle,
     string ChallengeTitle,
     string Difficulty,
+    string Language,             // nombre legible: "C#", "Python", "SQL"...
     DateTime CompletedAtUtc,
     TechnicalScoreResult Evaluation
 );

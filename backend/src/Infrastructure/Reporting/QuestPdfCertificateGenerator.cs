@@ -79,7 +79,7 @@ public sealed class QuestPdfCertificateGenerator : ICertificateGenerator
             text.DefaultTextStyle(style => style.FontSize(12).FontColor(Muted));
             text.Span("completó el reto ");
             text.Span($"“{data.ChallengeTitle}”").SemiBold().FontColor(Dark);
-            text.Span($" (nivel {data.Difficulty}) para la búsqueda ");
+            text.Span($" en {data.Language} (nivel {data.Difficulty}) para la búsqueda ");
             text.Span(data.JobTitle).SemiBold().FontColor(Dark);
             text.Span(", evaluado por el motor de IA de Mockly.");
         });

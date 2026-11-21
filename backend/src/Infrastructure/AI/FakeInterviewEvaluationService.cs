@@ -1,4 +1,5 @@
 // backend/src/Infrastructure/AI/FakeInterviewEvaluationService.cs
+using Mockly.Domain.Enums;
 using Mockly.Domain.Interfaces;
 
 namespace Mockly.Infrastructure.AI;
@@ -9,6 +10,7 @@ public sealed class FakeInterviewEvaluationService : IInterviewEvaluationService
 {
     public async Task<TechnicalScoreResult> EvaluateSubmissionAsync(
         string challengeDescription,
+        ProgrammingLanguage language,
         string submittedCode,
         CancellationToken cancellationToken = default)
     {
@@ -20,7 +22,7 @@ public sealed class FakeInterviewEvaluationService : IInterviewEvaluationService
         var score = 55;
         var code = submittedCode.ToLowerInvariant();
 
-        if (code.Contains("function") || code.Contains("public") || code.Contains("class")) score += 15;
+        if (code.Contains("function") || code.Contains("public") || code.Contains("class") || code.Contains("def ") || code.Contains("select")) score += 15;
         if (code.Contains("return")) score += 10;
         if (code.Contains("test")) score += 5;
         if (submittedCode.Length > 200) score += 10;

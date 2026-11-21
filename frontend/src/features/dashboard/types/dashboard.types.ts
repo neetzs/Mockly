@@ -14,6 +14,7 @@ export interface CandidateRanking {
   candidateEmail: string;
   challengeTitle: string;
   difficulty: string;
+  language: string;
   overallScore: number;
   codeQualityScore: number;
   problemSolvingScore: number;

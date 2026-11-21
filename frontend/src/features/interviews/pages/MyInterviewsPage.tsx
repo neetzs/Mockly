@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../auth/context';
 import { ApiError, interviewService } from '../services/interview.service';
+import { languageLabel } from '../languages';
 import type { InterviewStatus, InterviewSummary } from '../types/interview.types';
 
 const STATUS_LABEL: Record<InterviewStatus, { text: string; className: string }> = {
@@ -66,7 +67,9 @@ export const MyInterviewsPage: React.FC = () => {
                 >
                   <div className="space-y-1 text-left">
                     <p className="font-semibold text-slate-100">{interview.challengeTitle}</p>
-                    <p className="text-xs text-slate-500 font-mono">{interview.difficulty}</p>
+                    <p className="text-xs text-slate-500 font-mono">
+                      {languageLabel(interview.language)} · {interview.difficulty}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3">
                     {interview.overallScore !== null && (

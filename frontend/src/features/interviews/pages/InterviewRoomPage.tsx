@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/context';
 import { ApiError, interviewService } from '../services/interview.service';
 import { EvaluationPanel } from '../components/EvaluationPanel';
 import { CertificateDownloadButton } from '../components/CertificateDownloadButton';
+import { languageLabel, monacoLanguageId } from '../languages';
 import type { InterviewDetail } from '../types/interview.types';
 
 /**
@@ -102,11 +103,11 @@ export const InterviewRoomPage: React.FC = () => {
 
         <div className="space-y-2">
           <span className="text-[11px] font-mono uppercase tracking-wider text-indigo-300">
-            {interview.difficulty}
+            {languageLabel(interview.language)} · {interview.difficulty}
           </span>
           <h2 className="text-2xl font-bold text-white">{interview.challengeTitle}</h2>
           <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
-            {interview.challengeDescription}
+            {unwrapLines(interview.challengeDescription)}
           </p>
         </div>
 
@@ -148,7 +149,7 @@ export const InterviewRoomPage: React.FC = () => {
       <div className="relative rounded-xl border border-slate-800 overflow-hidden min-h-[480px]">
         <Editor
           height="100%"
-          defaultLanguage="csharp"
+          language={monacoLanguageId(interview.language)}
           theme="vs-dark"
           value={code}
           onChange={(value) => setCode(value ?? '')}
@@ -172,8 +173,12 @@ export const InterviewRoomPage: React.FC = () => {
   );
 };
 
+// Las descripciones vienen con saltos de línea "de código" (cortadas a ~100 columnas en el seeder).
+// Un salto simple se une con un espacio para que el texto fluya; uno doble sigue separando párrafos.
+const unwrapLines = (text: string) => text.replace(/([^\n])\n(?!\n)/g, '$1 ');
+
 const BackLink: React.FC = () => (
-  <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200">
+  <Link to="/interviews" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200">
     <ArrowLeft className="h-3.5 w-3.5" />
     Mis entrevistas
   </Link>

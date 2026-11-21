@@ -11,14 +11,15 @@ export interface CodeSampleData {
   overall: number;
 }
 
-// Mismo ponderado que el motor de IA: 50% resolución, 30% calidad, 20% arquitectura.
+// Misma ponderación que ScoreWeights del backend: 50% resolución, 30% calidad, 20% arquitectura.
 const evaluation = (solving: number, quality: number, architecture: number) => ({
   scores: [
     { label: 'Resolución del problema', value: solving },
     { label: 'Calidad de código', value: quality },
     { label: 'Arquitectura', value: architecture },
   ],
-  overall: Math.round(solving * 0.5 + quality * 0.3 + architecture * 0.2),
+  // Cuenta entera, igual que el backend: evita errores de punto flotante en los x,5.
+  overall: Math.floor((solving * 50 + quality * 30 + architecture * 20 + 50) / 100),
 });
 
 export const SAMPLES: CodeSampleData[] = [

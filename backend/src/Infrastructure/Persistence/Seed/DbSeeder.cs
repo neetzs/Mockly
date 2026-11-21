@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Mockly.Application.Common.Interfaces;
+using Mockly.Domain.Common;
 using Mockly.Domain.Entities;
 using Mockly.Domain.Enums;
 using Mockly.Domain.Interfaces;
@@ -182,8 +183,8 @@ public sealed class DbSeeder
     {
         var session = new InterviewSession(candidateId, jobOpeningId, challengeId);
 
-        // Mismo ponderado que le pedimos a la IA: 50% resolución, 30% calidad, 20% arquitectura.
-        var overall = (int)Math.Round(solving * 0.5 + quality * 0.3 + architecture * 0.2);
+        // Misma regla que usa el motor de IA (ScoreWeights, en el dominio).
+        var overall = ScoreWeights.CalculateOverall(solving, quality, architecture);
         var result = new TechnicalScoreResult(
             overall, quality, solving, architecture,
             "Evaluación de ejemplo generada por el seeder.",

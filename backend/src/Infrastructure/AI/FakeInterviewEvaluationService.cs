@@ -1,4 +1,5 @@
 // backend/src/Infrastructure/AI/FakeInterviewEvaluationService.cs
+using Mockly.Domain.Common;
 using Mockly.Domain.Enums;
 using Mockly.Domain.Interfaces;
 
@@ -30,11 +31,15 @@ public sealed class FakeInterviewEvaluationService : IInterviewEvaluationService
         score = Math.Clamp(score, 0, 100);
 
         // challengeDescription se usará cuando conectemos la IA real
+        var codeQuality = Math.Clamp(score + 5, 0, 100);
+        var problemSolving = Math.Clamp(score - 5, 0, 100);
+        var architecture = Math.Clamp(score - 10, 0, 100);
+
         return new TechnicalScoreResult(
-            OverallScore: score,
-            CodeQualityScore: Math.Clamp(score + 5, 0, 100),
-            ProblemSolvingScore: Math.Clamp(score - 5, 0, 100),
-            ArchitectureScore: Math.Clamp(score - 10, 0, 100),
+            OverallScore: ScoreWeights.CalculateOverall(problemSolving, codeQuality, architecture),
+            CodeQualityScore: codeQuality,
+            ProblemSolvingScore: problemSolving,
+            ArchitectureScore: architecture,
             Summary: "Evaluación simulada (mock). Reemplazar por OpenAI cuando haya API key.",
             Strengths: new[] { "Escribió código completo.", "Usó estructura de control." },
             Improvements: new[] { "Agregá tests unitarios.", "Documentá las funciones." });

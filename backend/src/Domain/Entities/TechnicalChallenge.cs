@@ -6,6 +6,7 @@ namespace Mockly.Domain.Entities;
 
 
 /// Reto de código que el candidato debe resolver en el editor Monaco, en un lenguaje concreto.
+/// Puede pertenecer a una búsqueda laboral o a la biblioteca de práctica (JobOpeningId = null).
 public class TechnicalChallenge : BaseEntity
 {
     public string Title { get; private set; } = string.Empty;
@@ -18,12 +19,16 @@ public class TechnicalChallenge : BaseEntity
 
     /// Lenguaje del reto: define el resaltado del editor y cómo evalúa la IA.
     public ProgrammingLanguage Language { get; private set; }
-    public Guid JobOpeningId { get; private set; }
-    public JobOpening JobOpening { get; private set; } = null!;
+    /// Null = reto de la biblioteca de práctica, disponible para cualquier candidato.
+    public Guid? JobOpeningId { get; private set; }
+    public JobOpening? JobOpening { get; private set; }
+
+    /// Propiedad calculada (solo get): EF no la mapea a una columna.
+    public bool IsPractice => JobOpeningId is null;
 
     private TechnicalChallenge() { }
 
-    public TechnicalChallenge(string title, string description, string initialCodeTemplate, ChallengeDifficulty difficulty, ProgrammingLanguage language, Guid jobOpeningId)
+    public TechnicalChallenge(string title, string description, string initialCodeTemplate, ChallengeDifficulty difficulty, ProgrammingLanguage language, Guid? jobOpeningId)
     {
         Title = title.Trim();
         Description = description.Trim();

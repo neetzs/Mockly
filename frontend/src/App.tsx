@@ -9,6 +9,7 @@ import { InterviewRoomPage } from "./features/interviews/pages/InterviewRoomPage
 import { RecruiterDashboardPage } from "./features/dashboard/RecruiterDashboardPage";
 import { Navbar } from "./components/layout/Navbar";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
+import { PracticePage } from "./features/practice/pages/PracticePage";
 
 /** Layout de la app logueada: navbar + contenedor. Las páginas se renderizan en <Outlet />. */
 const AppLayout: React.FC = () => (
@@ -41,6 +42,7 @@ export default function App(): React.JSX.Element {
             <Route element={<ProtectedRoute allowedRoles={["Candidate"]} />}>
               <Route path="/interviews" element={<MyInterviewsPage />} />
               <Route path="/interviews/:id" element={<InterviewRoomPage />} />
+              <Route path="/practice" element={<PracticePage />} />
             </Route>
             <Route element={<ProtectedRoute allowedRoles={["Recruiter"]} />}>
               <Route path="/dashboard" element={<RecruiterDashboardPage />} />

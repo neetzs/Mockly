@@ -37,10 +37,12 @@ public sealed class TechnicalChallengeConfiguration : IEntityTypeConfiguration<T
             .HasConversion<int>()
             .HasDefaultValue(ProgrammingLanguage.CSharp);
 
-        // Si se elimina la búsqueda laboral, se eliminan sus retos en cascada
+        // FK opcional: los retos de la biblioteca de práctica no tienen búsqueda.
+        // Si se elimina la búsqueda laboral, se eliminan sus retos en cascada.
         builder.HasOne(t => t.JobOpening)
             .WithMany(j => j.Challenges)
             .HasForeignKey(t => t.JobOpeningId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

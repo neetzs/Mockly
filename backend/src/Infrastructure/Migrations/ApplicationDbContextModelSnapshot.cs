@@ -40,7 +40,7 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("JobOpeningId")
+                    b.Property<Guid?>("JobOpeningId")
                         .HasColumnType("uuid");
 
                     b.Property<int?>("OverallScore")
@@ -126,7 +126,7 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("JobOpeningId")
+                    b.Property<Guid?>("JobOpeningId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Language")
@@ -197,8 +197,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Mockly.Domain.Entities.JobOpening", "JobOpening")
                         .WithMany("InterviewSessions")
                         .HasForeignKey("JobOpeningId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Mockly.Domain.Entities.TechnicalChallenge", "TechnicalChallenge")
                         .WithMany()
@@ -229,8 +228,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Mockly.Domain.Entities.JobOpening", "JobOpening")
                         .WithMany("Challenges")
                         .HasForeignKey("JobOpeningId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("JobOpening");
                 });

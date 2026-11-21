@@ -19,6 +19,9 @@ export interface EvaluationResult {
 export interface InterviewDetail {
   id: string;
   status: InterviewStatus;
+  challengeId: string;
+  /** null = intento de práctica (no pertenece a ninguna búsqueda). */
+  jobOpeningTitle: string | null;
   challengeTitle: string;
   challengeDescription: string;
   initialCodeTemplate: string;
@@ -31,6 +34,9 @@ export interface InterviewDetail {
 export interface InterviewSummary {
   id: string;
   status: InterviewStatus;
+  challengeId: string;
+  /** null = intento de práctica (no pertenece a ninguna búsqueda). */
+  jobOpeningTitle: string | null;
   challengeTitle: string;
   difficulty: ChallengeDifficulty;
   language: ProgrammingLanguage;

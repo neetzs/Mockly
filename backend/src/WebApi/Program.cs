@@ -126,6 +126,7 @@ app.MapInterviewEndpoints();
 
 // 8. Dashboard del reclutador: endpoints REST + hub de SignalR (solo Recruiters)
 app.MapRecruiterEndpoints();
+app.MapPracticeEndpoints();
 app.MapHub<InterviewHub>("/hubs/interviews")
    .RequireAuthorization(policy => policy.RequireRole(nameof(Mockly.Domain.Enums.UserRole.Recruiter)));
 

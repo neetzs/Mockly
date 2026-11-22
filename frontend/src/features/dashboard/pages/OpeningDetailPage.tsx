@@ -145,7 +145,14 @@ const CloseOpeningButton: React.FC<{ openingId: string; onClosed: (o: JobOpening
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !isClosing && setOpen(next)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (isClosing) return;
+        setError(null); // cada apertura arranca limpia, sin el error del intento anterior
+        setOpen(next);
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" className="shrink-0">
           <Lock className="h-4 w-4" />

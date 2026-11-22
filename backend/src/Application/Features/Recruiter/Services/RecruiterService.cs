@@ -108,7 +108,12 @@ public sealed class RecruiterService : IRecruiterService
     public async Task<JobOpeningDetailResponse> GetOpeningAsync(Guid jobOpeningId, Guid recruiterId, CancellationToken cancellationToken = default)
     {
         await EnsureOwnsOpeningAsync(jobOpeningId, recruiterId, cancellationToken);
+        return await BuildOpeningDetailAsync(jobOpeningId, cancellationToken);
+    }
 
+    /// Arma el detalle de una búsqueda. Asume que la pertenencia ya se verificó.
+    private async Task<JobOpeningDetailResponse> BuildOpeningDetailAsync(Guid jobOpeningId, CancellationToken cancellationToken)
+    {
         // Dos consultas en lugar de un Include de dos colecciones: un solo JOIN multiplicaría
         // filas (retos × sesiones), lo que se conoce como "explosión cartesiana".
         var opening = await _context.JobOpenings
@@ -155,7 +160,7 @@ public sealed class RecruiterService : IRecruiterService
         }
 
         // Devolvemos el detalle actualizado para que la pantalla no tenga que volver a pedirlo.
-        return await GetOpeningAsync(jobOpeningId, recruiterId, cancellationToken);
+        return await BuildOpeningDetailAsync(jobOpeningId, cancellationToken);
     }
 
     public async Task<InvitedCandidateResponse> InviteCandidateAsync(Guid jobOpeningId, Guid recruiterId, InviteCandidateRequest request, CancellationToken cancellationToken = default)

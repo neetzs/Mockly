@@ -66,8 +66,8 @@ public static class RecruiterEndpoints
             Results.Ok(await recruiterService.CloseOpeningAsync(id, user.GetUserId(), ct)))
         .WithName("CloseOpening")
         .Produces<JobOpeningDetailResponse>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status403Forbidden)
-        .ProducesProblem(StatusCodes.Status404NotFound);
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict);
 
         // POST /api/v1/recruiter/openings/{id}/invitations → invita a un candidato registrado por email
         group.MapPost("/openings/{id:guid}/invitations", async (Guid id, InviteCandidateRequest request, ClaimsPrincipal user, IRecruiterService recruiterService, CancellationToken ct) =>

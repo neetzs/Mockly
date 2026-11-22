@@ -1,4 +1,5 @@
 // backend/src/WebApi/ExceptionHandlers/ApiExceptionHandler.cs
+using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -51,6 +52,14 @@ public sealed class ApiExceptionHandler : IExceptionHandler
                 StatusCodes.Status409Conflict,
                 "Operación no permitida",
                 exception.Message),
+
+            // El framework no pudo leer el body (JSON mal formado, tipo incorrecto): es culpa del cliente, no un 500.
+            BadHttpRequestException ex => (
+                ex.StatusCode,
+                "Solicitud inválida",
+                ex.InnerException is JsonException { Path: { } path }
+                    ? $"El campo '{path}' tiene un valor o formato inválido."
+                    : "El cuerpo de la solicitud no tiene el formato esperado."),
 
             _ => (
                 StatusCodes.Status500InternalServerError,

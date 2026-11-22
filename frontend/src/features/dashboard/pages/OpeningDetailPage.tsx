@@ -1,7 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, BarChart3, ChevronRight, Loader2, UserPlus } from 'lucide-react';
+import { ArrowLeft, BarChart3, ChevronRight, Loader2, Lock, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { useAuth } from '@/features/auth/context';
 import { ApiError } from '@/features/interviews/services/interview.service';
 import { difficultyLabel, languageLabel } from '@/features/interviews/languages';
@@ -55,13 +65,23 @@ export const OpeningDetailPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-foreground">{opening.title}</h2>
           {opening.description && <p className="text-sm text-muted-foreground">{opening.description}</p>}
         </div>
-        <Link
-          to={`/dashboard?opening=${opening.id}`}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface/50 px-3 py-1.5 text-sm text-soft transition-colors hover:border-indigo-500/40 hover:text-foreground"
-        >
-          <BarChart3 className="h-4 w-4" />
-          Ver ranking
-        </Link>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Link
+            to={`/dashboard?opening=${opening.id}`}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface/50 px-3 py-1.5 text-sm text-soft transition-colors hover:border-indigo-500/40 hover:text-foreground"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Ver ranking
+          </Link>
+          {opening.isActive ? (
+            <CloseOpeningButton openingId={opening.id} onClosed={setOpening} />
+          ) : (
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-input bg-muted/60 px-3 py-1.5 text-sm text-soft">
+              <Lock className="h-4 w-4" />
+              Búsqueda cerrada
+            </span>
+          )}
+        </div>
       </div>
 
       <section className="space-y-3">
@@ -97,6 +117,70 @@ export const OpeningDetailPage: React.FC = () => {
         )}
       </section>
     </div>
+  );
+};
+
+const CloseOpeningButton: React.FC<{ openingId: string; onClosed: (o: JobOpeningDetail) => void }> = ({
+  openingId,
+  onClosed,
+}) => {
+  const { token, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleConfirm = async () => {
+    if (!token) return;
+    setIsClosing(true);
+    setError(null);
+    try {
+      onClosed(await recruiterService.closeOpening(openingId, token));
+      setOpen(false);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) logout();
+      setError(err instanceof Error ? err.message : 'No se pudo cerrar la búsqueda.');
+    } finally {
+      setIsClosing(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (isClosing) return;
+        setError(null); // cada apertura arranca limpia, sin el error del intento anterior
+        setOpen(next);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" className="shrink-0">
+          <Lock className="h-4 w-4" />
+          Cerrar búsqueda
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>¿Cerrar la búsqueda?</DialogTitle>
+          <DialogDescription>
+            No vas a poder invitar más candidatos. Los que ya invitaste pueden terminar sus retos y vas a seguir viendo
+            sus resultados. Esta acción no se puede deshacer.
+          </DialogDescription>
+        </DialogHeader>
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isClosing}>
+              Cancelar
+            </Button>
+          </DialogClose>
+          <Button variant="destructive" onClick={handleConfirm} disabled={isClosing}>
+            {isClosing && <Loader2 className="h-4 w-4 animate-spin" />}
+            Cerrar búsqueda
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -61,6 +61,14 @@ public static class RecruiterEndpoints
         .Produces<JobOpeningDetailResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status404NotFound);
 
+        // PATCH /api/v1/recruiter/openings/{id}/close → cierra la búsqueda (no admite más invitaciones)
+        group.MapPatch("/openings/{id:guid}/close", async (Guid id, ClaimsPrincipal user, IRecruiterService recruiterService, CancellationToken ct) =>
+            Results.Ok(await recruiterService.CloseOpeningAsync(id, user.GetUserId(), ct)))
+        .WithName("CloseOpening")
+        .Produces<JobOpeningDetailResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict);
+
         // POST /api/v1/recruiter/openings/{id}/invitations → invita a un candidato registrado por email
         group.MapPost("/openings/{id:guid}/invitations", async (Guid id, InviteCandidateRequest request, ClaimsPrincipal user, IRecruiterService recruiterService, CancellationToken ct) =>
         {

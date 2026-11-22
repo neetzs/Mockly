@@ -141,7 +141,7 @@ export const RecruiterDashboardPage: React.FC = () => {
             >
               {openings.map((o) => (
                 <option key={o.id} value={o.id}>
-                  {o.title}
+                  {o.isActive ? o.title : `${o.title} (cerrada)`}
                 </option>
               ))}
             </select>

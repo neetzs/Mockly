@@ -34,6 +34,9 @@ export const recruiterService = {
   getOpening: (openingId: string, token: string, signal?: AbortSignal) =>
     request<JobOpeningDetail>(`/openings/${openingId}`, token, { signal }),
 
+  closeOpening: (openingId: string, token: string) =>
+    request<JobOpeningDetail>(`/openings/${openingId}/close`, token, { method: 'PATCH' }),
+
   invite: (openingId: string, email: string, token: string) =>
     request<InvitedCandidate>(`/openings/${openingId}/invitations`, token, {
       method: 'POST',

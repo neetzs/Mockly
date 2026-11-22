@@ -75,6 +75,10 @@ builder.Services.AddMocklyRateLimiting(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
+// Por defecto, fuera de Development las Minimal APIs responden 400 solas (en inglés, sin detalle) y nunca
+// llegan al handler. Así los errores de binding (JSON mal formado, tipos incorrectos) se ven igual en todos los entornos.
+builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
+
 // SignalR (tiempo real) + implementación del notificador que usa Application
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IInterviewNotifier, SignalRInterviewNotifier>();

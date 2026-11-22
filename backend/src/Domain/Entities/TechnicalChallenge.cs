@@ -1,6 +1,7 @@
 // backend/src/Domain/Entities/TechnicalChallenge.cs
 using Mockly.Domain.Common;
 using Mockly.Domain.Enums;
+using Mockly.Domain.Exceptions;
 
 namespace Mockly.Domain.Entities;
 
@@ -25,6 +26,19 @@ public class TechnicalChallenge : BaseEntity
 
     /// Propiedad calculada (solo get): EF no la mapea a una columna.
     public bool IsPractice => JobOpeningId is null;
+
+    /// Copia este reto de la biblioteca para una búsqueda. Es una copia (y no una referencia) a propósito:
+    /// el reto queda "congelado" y todos los candidatos de la búsqueda se evalúan con la misma consigna,
+    /// aunque después se edite el original de la biblioteca.
+    public TechnicalChallenge CopyForJobOpening(Guid jobOpeningId)
+    {
+        if (!IsPractice)
+        {
+            throw new DomainException("Solo se pueden agregar retos de la biblioteca.");
+        }
+
+        return new TechnicalChallenge(Title, Description, InitialCodeTemplate, Difficulty, Language, jobOpeningId);
+    }
 
     private TechnicalChallenge() { }
 

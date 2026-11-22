@@ -4,14 +4,8 @@ import { ChevronRight, Dumbbell, Loader2 } from 'lucide-react';
 import { useAuth } from '../../auth/context';
 import { ApiError, interviewService } from '../services/interview.service';
 import { difficultyLabel, languageLabel } from '../languages';
-import type { InterviewStatus, InterviewSummary } from '../types/interview.types';
-
-const STATUS_LABEL: Record<InterviewStatus, { text: string; className: string }> = {
-  NotStarted: { text: 'Pendiente', className: 'text-soft border-input bg-muted/60' },
-  InProgress: { text: 'En curso', className: 'text-brand border-indigo-500/30 bg-indigo-500/10' },
-  Completed: { text: 'Completada', className: 'text-success border-emerald-500/30 bg-emerald-500/10' },
-  Failed: { text: 'Fallida', className: 'text-danger border-red-500/30 bg-red-500/10' },
-};
+import { STATUS_LABEL } from '../status';
+import type { InterviewSummary } from '../types/interview.types';
 
 export const MyInterviewsPage: React.FC = () => {
   const { token, logout } = useAuth();

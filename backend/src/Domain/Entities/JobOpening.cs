@@ -1,5 +1,7 @@
 // backend/src/Domain/Entities/JobOpening.cs
 using Mockly.Domain.Common;
+using Mockly.Domain.Enums;
+using Mockly.Domain.Exceptions;
 
 namespace Mockly.Domain.Entities;
 
@@ -23,6 +25,59 @@ public class JobOpening : BaseEntity
         Title = title.Trim();
         Description = description.Trim();
         RecruiterId = recruiterId;
+    }
+
+    // Límite razonable para una entrevista: más retos alargan demasiado la evaluación del candidato.
+    public const int MaxChallenges = 5;
+
+    /// Agrega a la búsqueda una copia de un reto de la biblioteca.
+    public void AddChallengeFromLibrary(TechnicalChallenge libraryChallenge)
+    {
+        if (Challenges.Count >= MaxChallenges)
+        {
+            throw new DomainException($"Una búsqueda puede tener como máximo {MaxChallenges} retos.");
+        }
+
+        Challenges.Add(libraryChallenge.CopyForJobOpening(Id));
+    }
+
+    /// Invita a un candidato: le crea una entrevista pendiente por cada reto de la búsqueda.
+    /// Devuelve las sesiones nuevas para que el caso de uso las agregue al DbContext de forma explícita.
+    public IReadOnlyList<InterviewSession> Invite(User candidate)
+    {
+        if (!IsActive)
+        {
+            throw new DomainException("La búsqueda está cerrada y no admite nuevos candidatos.");
+        }
+
+        if (candidate.Role != UserRole.Candidate)
+        {
+            throw new DomainException("Solo se pueden invitar usuarios con rol de candidato.");
+        }
+
+        if (Challenges.Count == 0)
+        {
+            throw new DomainException("La búsqueda no tiene retos para asignar.");
+        }
+
+        if (InterviewSessions.Any(s => s.CandidateId == candidate.Id))
+        {
+            throw new DomainException("Ese candidato ya está invitado a esta búsqueda.");
+        }
+
+        // Las copias se crean en el orden que eligió el reclutador, así que CreatedAtUtc conserva ese orden.
+        var sessions = Challenges
+            .OrderBy(c => c.CreatedAtUtc)
+            .Select(challenge => new InterviewSession(candidate.Id, Id, challenge.Id))
+            .ToList();
+
+        foreach (var session in sessions)
+        {
+            InterviewSessions.Add(session);
+        }
+
+        UpdatedAtUtc = DateTime.UtcNow;
+        return sessions;
     }
 
     public void Deactivate()

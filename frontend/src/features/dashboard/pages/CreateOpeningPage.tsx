@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/context';
 import { ApiError } from '@/features/interviews/services/interview.service';
 import { difficultyLabel, languageLabel } from '@/features/interviews/languages';
@@ -156,14 +157,10 @@ export const CreateOpeningPage: React.FC = () => {
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={isSaving || selected.length === 0 || title.trim() === ''}
-        className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
-      >
+      <Button type="submit" disabled={isSaving || selected.length === 0 || title.trim() === ''}>
         {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
         Crear búsqueda
-      </button>
+      </Button>
     </form>
   );
 };

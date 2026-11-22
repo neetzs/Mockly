@@ -14,6 +14,11 @@ public class JobOpening : BaseEntity
     public User Recruiter { get; private set; } = null!;
     public bool IsActive { get; private set; } = true;
 
+    /// Token de concurrencia optimista (en PostgreSQL es la columna de sistema xmin).
+    /// Si dos requests modifican la misma búsqueda a la vez (invitar dos veces, invitar y cerrar),
+    /// la segunda en guardar falla en lugar de pisar a la primera con datos viejos.
+    public uint RowVersion { get; private set; }
+
     // Colecciones asociadas
     public ICollection<TechnicalChallenge> Challenges { get; private set; } = new List<TechnicalChallenge>();
     public ICollection<InterviewSession> InterviewSessions { get; private set; } = new List<InterviewSession>();
@@ -38,7 +43,7 @@ public class JobOpening : BaseEntity
             throw new DomainException($"Una búsqueda puede tener como máximo {MaxChallenges} retos.");
         }
 
-        Challenges.Add(libraryChallenge.CopyForJobOpening(Id));
+        Challenges.Add(libraryChallenge.CopyForJobOpening(Id, Challenges.Count));
     }
 
     /// Invita a un candidato: le crea una entrevista pendiente por cada reto de la búsqueda.
@@ -65,9 +70,9 @@ public class JobOpening : BaseEntity
             throw new DomainException("Ese candidato ya está invitado a esta búsqueda.");
         }
 
-        // Las copias se crean en el orden que eligió el reclutador, así que CreatedAtUtc conserva ese orden.
+        // Una sesión por reto, en el orden que eligió el reclutador.
         var sessions = Challenges
-            .OrderBy(c => c.CreatedAtUtc)
+            .OrderBy(c => c.Position)
             .Select(challenge => new InterviewSession(candidate.Id, Id, challenge.Id))
             .ToList();
 

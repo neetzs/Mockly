@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, BarChart3, ChevronRight, Loader2, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/context';
 import { ApiError } from '@/features/interviews/services/interview.service';
 import { difficultyLabel, languageLabel } from '@/features/interviews/languages';
@@ -141,14 +142,10 @@ const InviteForm: React.FC<{ openingId: string; disabled: boolean; onInvited: (c
           aria-label="Email del candidato"
           className="min-w-0 flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm text-foreground placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <button
-          type="submit"
-          disabled={disabled || isSending}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
-        >
+        <Button type="submit" disabled={disabled || isSending}>
           {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
           Invitar
-        </button>
+        </Button>
       </form>
       <p className="text-xs text-muted-foreground">El candidato tiene que tener una cuenta en Mockly con ese email.</p>
       {message && <p className={`text-sm ${message.ok ? 'text-success' : 'text-danger'}`}>{message.text}</p>}
@@ -172,6 +169,8 @@ const CandidateCard: React.FC<{ candidate: InvitedCandidate }> = ({ candidate })
       <ul className="divide-y divide-border">
         {candidate.sessions.map((session) => {
           const status = STATUS_LABEL[session.status];
+          // Completadas y fallidas tienen código enviado para revisar.
+          const reviewable = session.status === 'Completed' || session.status === 'Failed';
           const row = (
             <>
               <span className="min-w-0 truncate text-sm text-soft">{session.challengeTitle}</span>
@@ -182,14 +181,13 @@ const CandidateCard: React.FC<{ candidate: InvitedCandidate }> = ({ candidate })
                 <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium ${status.className}`}>
                   {status.text}
                 </span>
-                {session.status === 'Completed' && <ChevronRight className="h-4 w-4 text-subtle" />}
+                {reviewable && <ChevronRight className="h-4 w-4 text-subtle" />}
               </span>
             </>
           );
           return (
             <li key={session.sessionId}>
-              {/* Solo las completadas tienen código y devolución para revisar */}
-              {session.status === 'Completed' ? (
+              {reviewable ? (
                 <Link
                   to={`/dashboard/sessions/${session.sessionId}`}
                   className="flex items-center justify-between gap-3 py-2 hover:text-foreground"

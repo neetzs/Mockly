@@ -123,9 +123,9 @@ public sealed class RecruiterService : IRecruiterService
             .Where(s => s.JobOpeningId == jobOpeningId)
             .ToListAsync(cancellationToken);
 
-        // Orden en que los eligió el reclutador (las copias se crearon en ese orden).
+        // Orden en que los eligió el reclutador.
         var challenges = opening.Challenges
-            .OrderBy(c => c.CreatedAtUtc)
+            .OrderBy(c => c.Position)
             .Select(c => new OpeningChallengeResponse(c.Id, c.Title, c.Difficulty.ToString(), c.Language.ToString()))
             .ToList();
 
@@ -236,7 +236,7 @@ public sealed class RecruiterService : IRecruiterService
             candidate.FullName,
             candidate.Email,
             sessions
-                .OrderBy(s => s.TechnicalChallenge.CreatedAtUtc)
+                .OrderBy(s => s.TechnicalChallenge.Position)
                 .Select(s => new CandidateSessionResponse(s.Id, s.TechnicalChallenge.Title, s.Status.ToString(), s.OverallScore))
                 .ToList());
 }

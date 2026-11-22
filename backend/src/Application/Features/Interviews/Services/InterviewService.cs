@@ -44,7 +44,7 @@ public sealed class InterviewService : IInterviewService
             .AsNoTracking()
             .Where(s => s.CandidateId == candidateId)
             .OrderBy(s => s.TechnicalChallenge.Difficulty)
-            .ThenBy(s => s.TechnicalChallenge.CreatedAtUtc) // a igual nivel, el orden que eligió el reclutador
+            .ThenBy(s => s.TechnicalChallenge.Position) // a igual nivel, el orden que eligió el reclutador
             .Select(s => new InterviewSummaryResponse(
                 s.Id,
                 s.Status.ToString(),

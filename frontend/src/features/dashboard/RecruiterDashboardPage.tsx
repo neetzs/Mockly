@@ -20,9 +20,10 @@ export const RecruiterDashboardPage: React.FC = () => {
   const { token } = useAuth();
   // ?opening=<id> permite llegar al ranking de una búsqueda puntual (desde su página de gestión).
   const [searchParams] = useSearchParams();
+  const requestedOpening = searchParams.get('opening');
 
   const [openings, setOpenings] = useState<JobOpeningSummary[] | null>(null);
-  const [openingId, setOpeningId] = useState<string | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(requestedOpening);
   const [ranking, setRanking] = useState<CandidateRanking[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -38,15 +39,22 @@ export const RecruiterDashboardPage: React.FC = () => {
       .getOpenings(token, controller.signal)
       .then((data) => {
         setOpenings(data);
-        const requested = searchParams.get('opening');
-        const initial = data.find((o) => o.id === requested) ?? data[0];
-        setOpeningId((current) => current ?? initial?.id ?? null);
+        // Si el id pedido no existe (o no hay ninguno), caemos en la primera búsqueda.
+        setOpeningId((current) => (data.some((o) => o.id === current) ? current : (data[0]?.id ?? null)));
       })
       .catch((err: unknown) => {
         if (!controller.signal.aborted) setError(err instanceof Error ? err.message : 'Error al cargar.');
       });
     return () => controller.abort();
-  }, [token, searchParams]);
+  }, [token]);
+
+  // Si la URL cambia a otro ?opening= (atrás/adelante o un link), seleccionamos esa búsqueda.
+  // Se ajusta durante el render (patrón recomendado por React) en lugar de un useEffect.
+  const [lastRequested, setLastRequested] = useState(requestedOpening);
+  if (requestedOpening !== lastRequested) {
+    setLastRequested(requestedOpening);
+    if (requestedOpening) setOpeningId(requestedOpening);
+  }
 
   // 2) Ranking inicial de la búsqueda seleccionada (lo que pasó ANTES de abrir el dashboard).
   useEffect(() => {

@@ -37,7 +37,6 @@ cd frontend && npm install && npm run dev
 - No commitear `.env`, `bin/`, `obj/`, `node_modules/`.
 
 ## Estado
-- Hecho: auth JWT (Candidate/Recruiter), sala de entrevista con Monaco, motor de IA (`IChatClient`, JSON estricto) con rate limit, dashboard en tiempo real con SignalR, certificados PDF (QuestPDF), modo práctica, seed de datos demo, búsquedas del reclutador (crear con retos de la biblioteca, invitar candidatos, revisar sesiones).
-- Pendiente: cerrar búsquedas (`JobOpening.Deactivate()` no tiene endpoint).
+- Hecho: auth JWT (Candidate/Recruiter), sala de entrevista con Monaco, motor de IA (`IChatClient`, JSON estricto) con rate limit, dashboard en tiempo real con SignalR, certificados PDF (QuestPDF), modo práctica, seed de datos demo, búsquedas del reclutador (crear con retos de la biblioteca, invitar candidatos, revisar sesiones, cerrar búsquedas).
 - Seed demo (solo Development): `recruiter@mockly.dev` / `candidate@mockly.dev`, password `Demo123!`.
 - `../mockly.ai/` es un borrador viejo: ignorarlo.

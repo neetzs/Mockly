@@ -141,6 +141,23 @@ public sealed class RecruiterService : IRecruiterService
         return new JobOpeningDetailResponse(opening.Id, opening.Title, opening.Description, opening.IsActive, challenges, candidates);
     }
 
+    /// Cierra la búsqueda: no admite nuevos candidatos, pero los ya invitados pueden terminar sus retos.
+    /// Es idempotente: cerrar una búsqueda ya cerrada no falla.
+    public async Task<JobOpeningDetailResponse> CloseOpeningAsync(Guid jobOpeningId, Guid recruiterId, CancellationToken cancellationToken = default)
+    {
+        await EnsureOwnsOpeningAsync(jobOpeningId, recruiterId, cancellationToken);
+
+        var opening = await _context.JobOpenings.SingleAsync(j => j.Id == jobOpeningId, cancellationToken);
+        if (opening.IsActive)
+        {
+            opening.Deactivate();
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        // Devolvemos el detalle actualizado para que la pantalla no tenga que volver a pedirlo.
+        return await GetOpeningAsync(jobOpeningId, recruiterId, cancellationToken);
+    }
+
     public async Task<InvitedCandidateResponse> InviteCandidateAsync(Guid jobOpeningId, Guid recruiterId, InviteCandidateRequest request, CancellationToken cancellationToken = default)
     {
         var validation = await _inviteValidator.ValidateAsync(request, cancellationToken);

@@ -15,6 +15,8 @@ public interface IRecruiterService
 
     Task<JobOpeningDetailResponse> GetOpeningAsync(Guid jobOpeningId, Guid recruiterId, CancellationToken cancellationToken = default);
 
+    Task<JobOpeningDetailResponse> CloseOpeningAsync(Guid jobOpeningId, Guid recruiterId, CancellationToken cancellationToken = default);
+
     Task<InvitedCandidateResponse> InviteCandidateAsync(Guid jobOpeningId, Guid recruiterId, InviteCandidateRequest request, CancellationToken cancellationToken = default);
 
     Task<SessionReviewResponse> GetSessionReviewAsync(Guid sessionId, Guid recruiterId, CancellationToken cancellationToken = default);

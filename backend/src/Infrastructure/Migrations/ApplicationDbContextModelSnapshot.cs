@@ -90,6 +90,12 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("RecruiterId")
                         .HasColumnType("uuid");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -133,6 +139,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Title")
                         .IsRequired()

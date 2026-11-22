@@ -1,6 +1,7 @@
 // backend/src/Domain/Entities/TechnicalChallenge.cs
 using Mockly.Domain.Common;
 using Mockly.Domain.Enums;
+using Mockly.Domain.Exceptions;
 
 namespace Mockly.Domain.Entities;
 
@@ -23,8 +24,28 @@ public class TechnicalChallenge : BaseEntity
     public Guid? JobOpeningId { get; private set; }
     public JobOpening? JobOpening { get; private set; }
 
+    /// Orden del reto dentro de su búsqueda (0, 1, 2...). En la biblioteca siempre es 0.
+    /// Es explícito porque CreatedAtUtc no alcanza: las copias se crean en el mismo instante.
+    public int Position { get; private set; }
+
     /// Propiedad calculada (solo get): EF no la mapea a una columna.
     public bool IsPractice => JobOpeningId is null;
+
+    /// Copia este reto de la biblioteca para una búsqueda. Es una copia (y no una referencia) a propósito:
+    /// el reto queda "congelado" y todos los candidatos de la búsqueda se evalúan con la misma consigna,
+    /// aunque después se edite el original de la biblioteca.
+    public TechnicalChallenge CopyForJobOpening(Guid jobOpeningId, int position)
+    {
+        if (!IsPractice)
+        {
+            throw new DomainException("Solo se pueden agregar retos de la biblioteca.");
+        }
+
+        return new TechnicalChallenge(Title, Description, InitialCodeTemplate, Difficulty, Language, jobOpeningId)
+        {
+            Position = position,
+        };
+    }
 
     private TechnicalChallenge() { }
 

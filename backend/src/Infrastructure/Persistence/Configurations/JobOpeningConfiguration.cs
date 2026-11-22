@@ -21,6 +21,10 @@ public sealed class JobOpeningConfiguration : IEntityTypeConfiguration<JobOpenin
             .IsRequired()
             .HasMaxLength(4000);
 
+        // Npgsql mapea un uint marcado como row version a la columna de sistema xmin.
+        builder.Property(j => j.RowVersion)
+            .IsRowVersion();
+
         // Relación: Una búsqueda laboral pertenece a un reclutador
         builder.HasOne(j => j.Recruiter)
             .WithMany(u => u.CreatedJobOpenings)

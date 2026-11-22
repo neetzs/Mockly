@@ -10,6 +10,9 @@ import { RecruiterDashboardPage } from "./features/dashboard/RecruiterDashboardP
 import { Navbar } from "./components/layout/Navbar";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { PracticePage } from "./features/practice/pages/PracticePage";
+import { CreateOpeningPage } from "./features/dashboard/pages/CreateOpeningPage";
+import { OpeningDetailPage } from "./features/dashboard/pages/OpeningDetailPage";
+import { SessionReviewPage } from "./features/dashboard/pages/SessionReviewPage";
 
 /** Layout de la app logueada: navbar + contenedor. Las páginas se renderizan en <Outlet />. */
 const AppLayout: React.FC = () => (
@@ -46,6 +49,9 @@ export default function App(): React.JSX.Element {
             </Route>
             <Route element={<ProtectedRoute allowedRoles={["Recruiter"]} />}>
               <Route path="/dashboard" element={<RecruiterDashboardPage />} />
+              <Route path="/dashboard/openings/new" element={<CreateOpeningPage />} />
+              <Route path="/dashboard/openings/:id" element={<OpeningDetailPage />} />
+              <Route path="/dashboard/sessions/:id" element={<SessionReviewPage />} />
             </Route>
           </Route>
 

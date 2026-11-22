@@ -3,6 +3,7 @@ using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Mockly.Application.Common.Exceptions;
 using Mockly.Domain.Exceptions;
 
@@ -40,6 +41,12 @@ public sealed class ApiExceptionHandler : IExceptionHandler
                 StatusCodes.Status404NotFound,
                 "Recurso no encontrado",
                 exception.Message),
+
+            // Otra request modificó el mismo registro entre que lo leímos y lo guardamos.
+            DbUpdateConcurrencyException => (
+                StatusCodes.Status409Conflict,
+                "Conflicto de edición",
+                "Los datos cambiaron mientras hacías la operación. Recargá la página e intentá de nuevo."),
 
             UnauthorizedAccessException => (
                 StatusCodes.Status401Unauthorized,

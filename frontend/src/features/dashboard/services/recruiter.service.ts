@@ -1,29 +1,45 @@
-import type { CandidateRanking, JobOpeningSummary } from '../types/dashboard.types';
+import { API_BASE_URL, apiRequest } from '@/features/interviews/services/interview.service';
+import type {
+  CandidateRanking,
+  CreateJobOpeningRequest,
+  InvitedCandidate,
+  JobOpeningDetail,
+  JobOpeningSummary,
+  LibraryChallenge,
+  SessionReview,
+} from '../types/dashboard.types';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5067/api/v1';
-const RECRUITER_URL = `${BASE_URL}/recruiter`;
+const RECRUITER_URL = `${API_BASE_URL}/recruiter`;
 
 /** El hub vive fuera de /api/v1: http://localhost:5067/hubs/interviews */
-export const INTERVIEW_HUB_URL = `${new URL(BASE_URL).origin}/hubs/interviews`;
+export const INTERVIEW_HUB_URL = `${new URL(API_BASE_URL).origin}/hubs/interviews`;
 
-async function request<T>(path: string, token: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`${RECRUITER_URL}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    signal,
-  });
-
-  if (!res.ok) {
-    const problem = await res.json().catch(() => ({}));
-    throw new Error(problem.detail || problem.title || 'No se pudieron cargar los datos del dashboard.');
-  }
-
-  return res.json() as Promise<T>;
-}
+// Mismo helper que el resto de la app: manda el JWT y convierte los ProblemDetails en ApiError.
+const request = <T,>(path: string, token: string, init: RequestInit = {}) =>
+  apiRequest<T>(`${RECRUITER_URL}${path}`, token, init);
 
 export const recruiterService = {
   getOpenings: (token: string, signal?: AbortSignal) =>
-    request<JobOpeningSummary[]>('/openings', token, signal),
+    request<JobOpeningSummary[]>('/openings', token, { signal }),
 
   getRanking: (openingId: string, token: string, signal?: AbortSignal) =>
-    request<CandidateRanking[]>(`/openings/${openingId}/ranking`, token, signal),
+    request<CandidateRanking[]>(`/openings/${openingId}/ranking`, token, { signal }),
+
+  getLibrary: (token: string, signal?: AbortSignal) =>
+    request<LibraryChallenge[]>('/library', token, { signal }),
+
+  createOpening: (body: CreateJobOpeningRequest, token: string) =>
+    request<JobOpeningSummary>('/openings', token, { method: 'POST', body: JSON.stringify(body) }),
+
+  getOpening: (openingId: string, token: string, signal?: AbortSignal) =>
+    request<JobOpeningDetail>(`/openings/${openingId}`, token, { signal }),
+
+  invite: (openingId: string, email: string, token: string) =>
+    request<InvitedCandidate>(`/openings/${openingId}/invitations`, token, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  getSessionReview: (sessionId: string, token: string, signal?: AbortSignal) =>
+    request<SessionReview>(`/sessions/${sessionId}`, token, { signal }),
 };

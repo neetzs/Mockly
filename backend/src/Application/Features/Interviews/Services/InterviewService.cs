@@ -44,6 +44,7 @@ public sealed class InterviewService : IInterviewService
             .AsNoTracking()
             .Where(s => s.CandidateId == candidateId)
             .OrderBy(s => s.TechnicalChallenge.Difficulty)
+            .ThenBy(s => s.TechnicalChallenge.Position) // a igual nivel, el orden que eligió el reclutador
             .Select(s => new InterviewSummaryResponse(
                 s.Id,
                 s.Status.ToString(),
@@ -145,7 +146,7 @@ public sealed class InterviewService : IInterviewService
         }
 
         // Paso 7 — Devolver el DTO a la API.
-        return ToEvaluationResponse(result);
+        return EvaluationResponse.FromResult(result);
     }
 
     /// Busca la sesión con su reto y verifica la pertenencia.
@@ -175,9 +176,7 @@ public sealed class InterviewService : IInterviewService
     {
         // Si ya fue evaluada, reconstruimos el resultado desde el JSON guardado,
         // así el frontend puede mostrarlo al recargar la sala.
-        var evaluation = session.AiFeedbackJson is { } json
-            ? JsonSerializer.Deserialize<TechnicalScoreResult>(json) is { } stored ? ToEvaluationResponse(stored) : null
-            : null;
+        var evaluation = EvaluationResponse.FromJson(session.AiFeedbackJson);
 
         return new(
             session.Id,
@@ -192,14 +191,4 @@ public sealed class InterviewService : IInterviewService
             string.IsNullOrEmpty(session.SubmittedCode) ? null : session.SubmittedCode,
             evaluation);
     }
-
-    private static EvaluationResponse ToEvaluationResponse(TechnicalScoreResult result) =>
-        new(
-            result.OverallScore,
-            result.CodeQualityScore,
-            result.ProblemSolvingScore,
-            result.ArchitectureScore,
-            result.Summary,
-            result.Strengths,
-            result.Improvements);
 }

@@ -1,7 +1,9 @@
 // backend/src/WebApi/ExceptionHandlers/ApiExceptionHandler.cs
+using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Mockly.Application.Common.Exceptions;
 using Mockly.Domain.Exceptions;
 
@@ -17,6 +19,14 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         _logger = logger;
     }
 
+    /// Mensaje para el cliente: si el problema es un campo puntual del JSON, lo nombra ("role" en lugar de "$.role").
+    private static string DescribeBadRequest(BadHttpRequestException ex) =>
+        ex.InnerException is JsonException { Path: { Length: > 2 } path } && path.StartsWith("$.")
+            ? $"El campo '{path[2..]}' tiene un valor o formato inválido."
+            : ex.InnerException is JsonException
+                ? "El cuerpo de la solicitud no es un JSON válido."
+                : "La solicitud es inválida.";
+
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         // 1) Según QUÉ excepción sea, elijo status + título + detalle
@@ -31,6 +41,12 @@ public sealed class ApiExceptionHandler : IExceptionHandler
                 StatusCodes.Status404NotFound,
                 "Recurso no encontrado",
                 exception.Message),
+
+            // Otra request modificó el mismo registro entre que lo leímos y lo guardamos.
+            DbUpdateConcurrencyException => (
+                StatusCodes.Status409Conflict,
+                "Conflicto de edición",
+                "Los datos cambiaron mientras hacías la operación. Recargá la página e intentá de nuevo."),
 
             UnauthorizedAccessException => (
                 StatusCodes.Status401Unauthorized,
@@ -51,6 +67,13 @@ public sealed class ApiExceptionHandler : IExceptionHandler
                 StatusCodes.Status409Conflict,
                 "Operación no permitida",
                 exception.Message),
+
+            // El framework no pudo leer la request (JSON mal formado, tipo incorrecto, parámetro inválido,
+            // body demasiado grande...): es culpa del cliente, no un 500.
+            BadHttpRequestException ex => (
+                ex.StatusCode,
+                "Solicitud inválida",
+                DescribeBadRequest(ex)),
 
             _ => (
                 StatusCodes.Status500InternalServerError,

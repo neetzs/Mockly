@@ -28,10 +28,21 @@ export function useSignalR(hubUrl: string, token: string | null, handlers: HubHa
   useEffect(() => {
     if (!token) return;
 
+    // isActive = false cuando el efecto ya se limpió. En desarrollo, StrictMode monta → desmonta → monta,
+    // y al salir de la página cortamos la conexión: esos cortes son a propósito, no errores.
+    let isActive = true;
+
     const connection = new HubConnectionBuilder()
       .withUrl(hubUrl, { accessTokenFactory: () => token })
       .withAutomaticReconnect()
-      .configureLogging(LogLevel.Warning)
+      // Logger propio: igual que LogLevel.Warning, pero se calla después de un corte intencional
+      // (si no, SignalR imprime "The connection was stopped during negotiation" como error).
+      .configureLogging({
+        log: (level, message) => {
+          if (!isActive || level < LogLevel.Warning) return;
+          (level >= LogLevel.Error ? console.error : console.warn)(`[SignalR] ${message}`);
+        },
+      })
       .build();
 
     // Registramos un "puente" por evento que siempre llama al handler más reciente.
@@ -42,10 +53,6 @@ export function useSignalR(hubUrl: string, token: string | null, handlers: HubHa
     connection.onreconnecting(() => setStatus('reconnecting'));
     connection.onreconnected(() => setStatus('connected'));
     connection.onclose(() => setStatus('disconnected'));
-
-    // isActive = false cuando el efecto ya se limpió. En desarrollo, StrictMode monta → desmonta → monta,
-    // así que la primera conexión se corta a propósito: ese error no lo mostramos.
-    let isActive = true;
 
     connection
       .start()

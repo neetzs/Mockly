@@ -37,6 +37,57 @@ public static class RecruiterEndpoints
         .Produces<IReadOnlyList<CandidateRankingResponse>>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status404NotFound);
 
+        // GET /api/v1/recruiter/library → retos de la biblioteca para armar una búsqueda
+        group.MapGet("/library", async (IRecruiterService recruiterService, CancellationToken ct) =>
+            Results.Ok(await recruiterService.GetLibraryAsync(ct)))
+        .WithName("GetChallengeLibrary")
+        .Produces<IReadOnlyList<LibraryChallengeResponse>>(StatusCodes.Status200OK);
+
+        // POST /api/v1/recruiter/openings → crea una búsqueda con copias de los retos elegidos
+        group.MapPost("/openings", async (CreateJobOpeningRequest request, ClaimsPrincipal user, IRecruiterService recruiterService, CancellationToken ct) =>
+        {
+            var opening = await recruiterService.CreateOpeningAsync(user.GetUserId(), request, ct);
+            return Results.Created($"/api/v1/recruiter/openings/{opening.Id}", opening);
+        })
+        .WithName("CreateOpening")
+        .Produces<JobOpeningSummaryResponse>(StatusCodes.Status201Created)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        // GET /api/v1/recruiter/openings/{id} → retos de la búsqueda y avance de cada candidato invitado
+        group.MapGet("/openings/{id:guid}", async (Guid id, ClaimsPrincipal user, IRecruiterService recruiterService, CancellationToken ct) =>
+            Results.Ok(await recruiterService.GetOpeningAsync(id, user.GetUserId(), ct)))
+        .WithName("GetOpening")
+        .Produces<JobOpeningDetailResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        // PATCH /api/v1/recruiter/openings/{id}/close → cierra la búsqueda (no admite más invitaciones)
+        group.MapPatch("/openings/{id:guid}/close", async (Guid id, ClaimsPrincipal user, IRecruiterService recruiterService, CancellationToken ct) =>
+            Results.Ok(await recruiterService.CloseOpeningAsync(id, user.GetUserId(), ct)))
+        .WithName("CloseOpening")
+        .Produces<JobOpeningDetailResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict);
+
+        // POST /api/v1/recruiter/openings/{id}/invitations → invita a un candidato registrado por email
+        group.MapPost("/openings/{id:guid}/invitations", async (Guid id, InviteCandidateRequest request, ClaimsPrincipal user, IRecruiterService recruiterService, CancellationToken ct) =>
+        {
+            var invited = await recruiterService.InviteCandidateAsync(id, user.GetUserId(), request, ct);
+            return Results.Created($"/api/v1/recruiter/openings/{id}", invited);
+        })
+        .WithName("InviteCandidate")
+        .Produces<InvitedCandidateResponse>(StatusCodes.Status201Created)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict);
+
+        // GET /api/v1/recruiter/sessions/{id} → código enviado y devolución completa de la IA
+        group.MapGet("/sessions/{id:guid}", async (Guid id, ClaimsPrincipal user, IRecruiterService recruiterService, CancellationToken ct) =>
+            Results.Ok(await recruiterService.GetSessionReviewAsync(id, user.GetUserId(), ct)))
+        .WithName("GetSessionReview")
+        .Produces<SessionReviewResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
         return app;
     }
 }

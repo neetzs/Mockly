@@ -1,5 +1,6 @@
 // backend/src/Application/Features/Recruiter/DTOs/RecruiterDtos.cs
 using System.Text.Json;
+using Mockly.Application.Features.Interviews.DTOs;
 using Mockly.Domain.Entities;
 using Mockly.Domain.Interfaces;
 
@@ -57,4 +58,71 @@ public sealed record CandidateRankingResponse(
 public sealed record InterviewCompletedEvent(
     Guid JobOpeningId,
     CandidateRankingResponse Entry
+);
+
+/// Reto de la biblioteca para elegir al crear una búsqueda
+public sealed record LibraryChallengeResponse(
+    Guid Id,
+    string Title,
+    string Description,
+    string Difficulty,
+    string Language
+);
+
+public sealed record CreateJobOpeningRequest(
+    string Title,
+    string Description,
+    IReadOnlyList<Guid> ChallengeIds
+);
+
+public sealed record InviteCandidateRequest(string Email);
+
+/// Detalle de una búsqueda: sus retos y el avance de cada candidato invitado
+public sealed record JobOpeningDetailResponse(
+    Guid Id,
+    string Title,
+    string Description,
+    bool IsActive,
+    IReadOnlyList<OpeningChallengeResponse> Challenges,
+    IReadOnlyList<InvitedCandidateResponse> Candidates
+);
+
+public sealed record OpeningChallengeResponse(
+    Guid Id,
+    string Title,
+    string Difficulty,
+    string Language
+);
+
+/// Un candidato invitado, con una fila por entrevista (reto) para ver su progreso
+public sealed record InvitedCandidateResponse(
+    Guid CandidateId,
+    string FullName,
+    string Email,
+    IReadOnlyList<CandidateSessionResponse> Sessions
+);
+
+public sealed record CandidateSessionResponse(
+    Guid SessionId,
+    string ChallengeTitle,
+    string Status,
+    int? OverallScore
+);
+
+/// Revisión de una entrevista: el código que envió el candidato y la devolución completa de la IA.
+/// Le permite al reclutador decidir con criterio propio, no solo mirando el número.
+public sealed record SessionReviewResponse(
+    Guid SessionId,
+    Guid JobOpeningId,
+    string JobOpeningTitle,
+    string CandidateName,
+    string CandidateEmail,
+    string ChallengeTitle,
+    string ChallengeDescription,
+    string Difficulty,
+    string Language,
+    string Status,
+    string? SubmittedCode,
+    EvaluationResponse? Evaluation,
+    DateTime? CompletedAtUtc
 );

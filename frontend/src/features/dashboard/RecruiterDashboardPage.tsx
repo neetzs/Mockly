@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Activity, BellRing, Loader2 } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Activity, BellRing, Code2, Loader2, Plus, Settings2 } from 'lucide-react';
 import { useAuth } from '../auth/context';
 import { useSignalR, type ConnectionStatus } from '@/hooks/useSignalR';
 import { INTERVIEW_HUB_URL, recruiterService } from './services/recruiter.service';
@@ -17,9 +18,12 @@ const sortRanking = (rows: CandidateRanking[]): CandidateRanking[] =>
 
 export const RecruiterDashboardPage: React.FC = () => {
   const { token } = useAuth();
+  // ?opening=<id> permite llegar al ranking de una búsqueda puntual (desde su página de gestión).
+  const [searchParams] = useSearchParams();
+  const requestedOpening = searchParams.get('opening');
 
   const [openings, setOpenings] = useState<JobOpeningSummary[] | null>(null);
-  const [openingId, setOpeningId] = useState<string | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(requestedOpening);
   const [ranking, setRanking] = useState<CandidateRanking[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -35,13 +39,22 @@ export const RecruiterDashboardPage: React.FC = () => {
       .getOpenings(token, controller.signal)
       .then((data) => {
         setOpenings(data);
-        setOpeningId((current) => current ?? data[0]?.id ?? null);
+        // Si el id pedido no existe (o no hay ninguno), caemos en la primera búsqueda.
+        setOpeningId((current) => (data.some((o) => o.id === current) ? current : (data[0]?.id ?? null)));
       })
       .catch((err: unknown) => {
         if (!controller.signal.aborted) setError(err instanceof Error ? err.message : 'Error al cargar.');
       });
     return () => controller.abort();
   }, [token]);
+
+  // Si la URL cambia a otro ?opening= (atrás/adelante o un link), seleccionamos esa búsqueda.
+  // Se ajusta durante el render (patrón recomendado por React) en lugar de un useEffect.
+  const [lastRequested, setLastRequested] = useState(requestedOpening);
+  if (requestedOpening !== lastRequested) {
+    setLastRequested(requestedOpening);
+    if (requestedOpening) setOpeningId(requestedOpening);
+  }
 
   // 2) Ranking inicial de la búsqueda seleccionada (lo que pasó ANTES de abrir el dashboard).
   useEffect(() => {
@@ -92,6 +105,25 @@ export const RecruiterDashboardPage: React.FC = () => {
   if (error) return <p className="text-sm text-danger">{error}</p>;
   if (!openings) return <Loader2 className="h-6 w-6 animate-spin text-brand mx-auto" />;
 
+  // Reclutador nuevo: en vez de un dashboard vacío, lo invitamos a crear su primera búsqueda.
+  if (openings.length === 0) {
+    return (
+      <div className="w-full max-w-xl mx-auto rounded-xl border border-dashed border-border px-6 py-12 text-center space-y-3">
+        <h2 className="text-xl font-bold text-foreground">Creá tu primera búsqueda</h2>
+        <p className="text-sm text-muted-foreground">
+          Elegí los retos de la biblioteca, invitá candidatos y seguí sus resultados en vivo desde acá.
+        </p>
+        <Link
+          to="/dashboard/openings/new"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
+        >
+          <Plus className="h-4 w-4" />
+          Nueva búsqueda
+        </Link>
+      </div>
+    );
+  }
+
   const selected = ranking.find((r) => r.sessionId === selectedId) ?? ranking[0];
   const scores = ranking.map((r) => r.overallScore);
   const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
@@ -109,15 +141,33 @@ export const RecruiterDashboardPage: React.FC = () => {
             >
               {openings.map((o) => (
                 <option key={o.id} value={o.id}>
-                  {o.title}
+                  {o.isActive ? o.title : `${o.title} (cerrada)`}
                 </option>
               ))}
             </select>
           ) : (
-            <p className="text-sm text-muted-foreground">{openings[0]?.title ?? 'No tenés búsquedas creadas.'}</p>
+            <p className="text-sm text-muted-foreground">{openings[0].title}</p>
           )}
         </div>
-        <LiveIndicator status={status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <LiveIndicator status={status} />
+          {openingId && (
+            <Link
+              to={`/dashboard/openings/${openingId}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface/50 px-3 py-1.5 text-sm text-soft transition-colors hover:border-indigo-500/40 hover:text-foreground"
+            >
+              <Settings2 className="h-4 w-4" />
+              Gestionar
+            </Link>
+          )}
+          <Link
+            to="/dashboard/openings/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva búsqueda
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -133,7 +183,19 @@ export const RecruiterDashboardPage: React.FC = () => {
           highlightedId={highlightedId}
           onSelect={setSelectedId}
         />
-        {selected && <CandidateRadarChart candidate={selected} ranking={ranking} />}
+        {selected && (
+          <div className="space-y-3">
+            <CandidateRadarChart candidate={selected} ranking={ranking} />
+            {/* El puntaje ordena; la decisión se toma leyendo el código */}
+            <Link
+              to={`/dashboard/sessions/${selected.sessionId}`}
+              className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface/50 px-4 py-2 text-sm text-soft transition-colors hover:border-indigo-500/40 hover:text-foreground"
+            >
+              <Code2 className="h-4 w-4" />
+              Ver código y devolución de {selected.candidateName}
+            </Link>
+          </div>
+        )}
       </div>
 
       {toast && (

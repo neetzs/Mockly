@@ -1,4 +1,7 @@
 // backend/src/Application/Features/Interviews/DTOs/InterviewDtos.cs
+using System.Text.Json;
+using Mockly.Domain.Interfaces;
+
 namespace Mockly.Application.Features.Interviews.DTOs;
 
 /// Datos de la sala que se cargan en el editor Monaco
@@ -43,7 +46,24 @@ public sealed record EvaluationResponse(
     string Summary,
     IReadOnlyList<string> Strengths,
     IReadOnlyList<string> Improvements
-);
+)
+{
+    public static EvaluationResponse FromResult(TechnicalScoreResult result) =>
+        new(
+            result.OverallScore,
+            result.CodeQualityScore,
+            result.ProblemSolvingScore,
+            result.ArchitectureScore,
+            result.Summary,
+            result.Strengths,
+            result.Improvements);
+
+    /// Reconstruye la evaluación desde el JSON guardado en la sesión (null si todavía no fue evaluada).
+    public static EvaluationResponse? FromJson(string? aiFeedbackJson) =>
+        aiFeedbackJson is { } json && JsonSerializer.Deserialize<TechnicalScoreResult>(json) is { } stored
+            ? FromResult(stored)
+            : null;
+}
 
 /// Archivo PDF del certificado listo para devolver como descarga
 public sealed record CertificateFileResponse(

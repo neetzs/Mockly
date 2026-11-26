@@ -19,13 +19,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// 2. CORS para desarrollo con Vite (Frontend en localhost:5173)
+// 2. CORS: orígenes del frontend por configuración (Cors__AllowedOrigins__0=https://... en el deploy)
 const string frontendCorsPolicy = "FrontendCorsPolicy";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+if (allowedOrigins is not { Length: > 0 })
+{
+    throw new InvalidOperationException("Falta 'Cors:AllowedOrigins': definí Cors__AllowedOrigins__0 con la URL del frontend.");
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(frontendCorsPolicy, policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -33,8 +39,12 @@ builder.Services.AddCors(options =>
 });
 
 // 3. Autenticación y Autorización JWT Bearer
-var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] 
-    ?? "clave_super_secreta_mockly_desarrollo_2026_segura_32_bytes";
+// Sin clave por defecto: si falta en el deploy, la API no arranca en vez de firmar tokens con una clave pública.
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
+if (jwtSecretKey is null || Encoding.UTF8.GetByteCount(jwtSecretKey) < 32)
+{
+    throw new InvalidOperationException("Falta 'Jwt:SecretKey' o tiene menos de 32 bytes: definí Jwt__SecretKey.");
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

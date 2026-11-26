@@ -4,16 +4,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# Copiar solución y proyectos primero: si no cambian, Docker reutiliza la capa del restore
+# Copiar los proyectos primero: si no cambian, Docker reutiliza la capa del restore
 # (cache de dependencias NuGet) y el build es mucho más rápido.
-COPY Mockly.slnx ./
 COPY src/Domain/Domain.csproj src/Domain/
 COPY src/Application/Application.csproj src/Application/
 COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
 COPY src/WebApi/WebApi.csproj src/WebApi/
 
-# Restaurar paquetes
-RUN dotnet restore Mockly.slnx
+# Restaurar paquetes del WebApi (la imagen no incluye backend/tests)
+RUN dotnet restore src/WebApi/WebApi.csproj
 
 # Copiar el código fuente completo y compilar en modo Release
 COPY src/ src/

@@ -13,7 +13,9 @@ services:
     restart: always
     environment:
       POSTGRES_USER: mockly_admin
-      POSTGRES_PASSWORD: mockly_secure_password_2026
+      # Valores de desarrollo por defecto; en cualquier otro ambiente se pisan con un .env (ver .env.example).
+      # Ojo: Postgres fija la password al crear el volumen; cambiarla después requiere borrar postgres_data.
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-mockly_secure_password_2026}"
       POSTGRES_DB: mockly_db
     ports:
       - "5432:5432"
@@ -35,7 +37,9 @@ services:
         condition: service_healthy
     environment:
       # "postgres" es el nombre del servicio: dentro de la red de compose funciona como hostname.
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=mockly_db;Username=mockly_admin;Password=mockly_secure_password_2026"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=mockly_db;Username=mockly_admin;Password=${POSTGRES_PASSWORD:-mockly_secure_password_2026}"
+      Jwt__SecretKey: "${JWT_SECRET_KEY:-clave_super_secreta_mockly_desarrollo_2026_segura_32_bytes}"
+      Cors__AllowedOrigins__0: "${FRONTEND_URL:-http://localhost:5173}"
       # Demo lista sin pasos manuales: aplica migraciones y carga datos demo al arrancar.
       Database__MigrateOnStartup: "true"
       Database__SeedDemoData: "true"
@@ -48,7 +52,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_BASE_URL: http://localhost:5067/api/v1
+        VITE_API_BASE_URL: "${VITE_API_BASE_URL:-http://localhost:5067/api/v1}"
     container_name: mockly-frontend
     restart: unless-stopped
     depends_on:

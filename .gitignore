@@ -5,7 +5,7 @@ obj/
 *.suo
 .vs/
 .vscode/
-appsettings.Development.json
+# appsettings.Development.json SÍ se versiona (solo valores de desarrollo); la API key de OpenAI va en user-secrets.
 appsettings.Local.json
 
 # Node / Vite

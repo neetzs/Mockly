@@ -22,8 +22,8 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
     public string GenerateToken(User user)
     {
         // Aca va la configuracion de JWT, incluyendo la clave secreta, el emisor y el público.
-        var secretKey = _configuration["Jwt:SecretKey"] 
-            ?? "clave_super_secreta_mockly_desarrollo_2026_segura_32_bytes";
+        var secretKey = _configuration["Jwt:SecretKey"]
+            ?? throw new InvalidOperationException("Falta 'Jwt:SecretKey' en la configuración.");
         var issuer = _configuration["Jwt:Issuer"] ?? "MocklyApi";
         var audience = _configuration["Jwt:Audience"] ?? "MocklyClient";
 
